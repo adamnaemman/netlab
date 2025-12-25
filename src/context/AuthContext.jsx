@@ -11,34 +11,33 @@ export const AuthProvider = ({ children }) => {
     const [isGuest, setIsGuest] = useState(false);
 
     useEffect(() => {
-        // Check for guest mode first
-        const guestMode = localStorage.getItem('netlab_guest_mode');
-        if (guestMode === 'true') {
-            setIsGuest(true);
-            setLoading(false);
-            return;
-        }
+        const initAuth = async () => {
+            // ALWAYS clear any existing session on app load
+            // This forces users to login every time they open the app
+            localStorage.removeItem('netlab_guest_mode');
 
-        // If Supabase not configured, default to guest mode
-        if (!isSupabaseConfigured()) {
-            setIsGuest(true);
-            setLoading(false);
-            return;
-        }
+            if (isSupabaseConfigured()) {
+                // Sign out any existing session to force login
+                await supabase.auth.signOut();
+            }
 
-        // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
-            setLoading(false);
-        });
-
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
+            // Set state to not authenticated, showing login page
+            setUser(null);
             setIsGuest(false);
-        });
+            setLoading(false);
+        };
 
-        return () => subscription.unsubscribe();
+        initAuth();
+
+        // Listen for auth changes (for when user logs in)
+        if (isSupabaseConfigured()) {
+            const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+                setUser(session?.user ?? null);
+                setIsGuest(false);
+            });
+
+            return () => subscription.unsubscribe();
+        }
     }, []);
 
     // Sign up with email/password
