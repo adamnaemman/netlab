@@ -396,10 +396,10 @@ const HomeScreen = () => {
                 style={{ backgroundColor: '#161b22', borderTop: '3px solid #30363d' }}
             >
                 <BottomNavItem icon="🏠" label="Learn" active />
-                <BottomNavItem icon="📖" label="Guide" onClick={() => setShowGuidebook(true)} />
-                <BottomNavItem icon="🏆" label="Ranks" />
-                <BottomNavItem icon="🎯" label="Quests" />
-                <BottomNavItem icon="👤" label="Profile" />
+                <BottomNavItem icon="📖" label="Guide" onClick={() => openGuidebook()} />
+                <BottomNavItem icon="🏆" label="Ranks" onClick={() => setComingSoon({ feature: 'Leaderboards', icon: '🏆' })} />
+                <BottomNavItem icon="🎯" label="Quests" onClick={() => setComingSoon({ feature: 'Quests', icon: '🎯' })} />
+                <BottomNavItem icon="👤" label="Profile" onClick={() => setShowProfile(true)} />
             </div>
         </div>
     );
