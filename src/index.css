@@ -1,0 +1,442 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles - Dark Terminal Theme */
+:root {
+  --terminal-bg: #0d1117;
+  --terminal-bg-secondary: #161b22;
+  --terminal-text: #c9d1d9;
+  --terminal-prompt: #58a6ff;
+  --terminal-success: #3fb950;
+  --terminal-error: #f85149;
+  --terminal-warning: #d29922;
+  --terminal-border: #30363d;
+  --terminal-muted: #8b949e;
+
+  /* Gamification colors */
+  --xp-color: #ffc800;
+  --heart-color: #ff4b4b;
+  --streak-color: #ff9600;
+  --level-locked: #484f58;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--terminal-bg);
+  color: var(--terminal-text);
+  line-height: 1.5;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Terminal Components */
+@layer components {
+  .terminal-container {
+    background-color: var(--terminal-bg);
+    border: 1px solid var(--terminal-border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .terminal-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: var(--terminal-bg-secondary);
+  }
+
+  .terminal-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .terminal-body {
+    padding: 16px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 14px;
+    min-height: 300px;
+    max-height: 450px;
+    overflow-y: auto;
+  }
+
+  .terminal-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .terminal-prompt {
+    color: var(--terminal-prompt);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .terminal-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--terminal-text);
+    font-family: inherit;
+    font-size: inherit;
+    flex: 1;
+    caret-color: var(--terminal-prompt);
+  }
+
+  .terminal-output {
+    color: var(--terminal-text);
+    white-space: pre-wrap;
+  }
+
+  .terminal-success {
+    color: var(--terminal-success);
+  }
+
+  .terminal-error {
+    color: var(--terminal-error);
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    height: 8px;
+    background-color: var(--terminal-border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--terminal-prompt), var(--terminal-success));
+    transition: width 0.5s ease-out;
+    border-radius: 4px;
+  }
+
+  /* Cards */
+  .card {
+    background-color: var(--terminal-bg-secondary);
+    border: 1px solid var(--terminal-border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .card:hover {
+    border-color: var(--terminal-prompt);
+  }
+
+  /* Level cards */
+  .level-card {
+    background-color: var(--terminal-bg-secondary);
+    border: 1px solid var(--terminal-border);
+    border-radius: 16px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .level-card:hover:not(.locked) {
+    border-color: var(--terminal-prompt);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(88, 166, 255, 0.15);
+  }
+
+  .level-card.active {
+    border-color: var(--terminal-prompt);
+    box-shadow: 0 0 20px rgba(88, 166, 255, 0.2);
+  }
+
+  .level-card.completed {
+    border-color: var(--terminal-success);
+  }
+
+  .level-card.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Gamification badges */
+  .xp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--xp-color);
+    background: rgba(255, 200, 0, 0.15);
+  }
+
+  .heart-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--heart-color);
+    background: rgba(255, 75, 75, 0.15);
+  }
+
+  .streak-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--streak-color);
+    background: rgba(255, 150, 0, 0.15);
+  }
+
+  /* Buttons */
+  .btn-primary {
+    padding: 12px 24px;
+    background-color: var(--terminal-prompt);
+    color: white;
+    font-weight: 600;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.1);
+  }
+
+  .btn-primary:disabled {
+    background-color: var(--terminal-border);
+    color: var(--terminal-muted);
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    padding: 12px 24px;
+    background-color: transparent;
+    color: var(--terminal-text);
+    font-weight: 600;
+    border-radius: 12px;
+    border: 1px solid var(--terminal-border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--terminal-prompt);
+    color: var(--terminal-prompt);
+  }
+
+  /* Sidebar */
+  .helper-sidebar {
+    background-color: var(--terminal-bg-secondary);
+    border-left: 1px solid var(--terminal-border);
+    padding: 16px;
+    overflow-y: auto;
+  }
+
+  /* Step item */
+  .step-item {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .step-item.completed {
+    background: rgba(63, 185, 80, 0.1);
+    border: 1px solid rgba(63, 185, 80, 0.3);
+  }
+
+  .step-item.current {
+    background: rgba(88, 166, 255, 0.1);
+    border: 1px solid rgba(88, 166, 255, 0.5);
+    animation: pulse-border 2s infinite;
+  }
+
+  .step-item.pending {
+    background: rgba(139, 148, 158, 0.1);
+    border: 1px solid transparent;
+  }
+
+  /* Topology */
+  .topology-node:hover {
+    filter: drop-shadow(0 0 8px rgba(88, 166, 255, 0.5));
+    cursor: pointer;
+  }
+
+  /* Hint box */
+  .hint-box {
+    background: rgba(88, 166, 255, 0.1);
+    border: 1px solid rgba(88, 166, 255, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 8px;
+  }
+
+  .hint-code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--terminal-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--terminal-success);
+  }
+
+  /* Celebration */
+  .celebration-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    z-index: 100;
+  }
+
+  .celebration-card {
+    background: var(--terminal-bg-secondary);
+    border: 1px solid var(--terminal-border);
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    max-width: 400px;
+    animation: pop-in 0.4s ease-out;
+  }
+
+  /* XP animation */
+  .xp-gain {
+    position: fixed;
+    color: var(--xp-color);
+    font-weight: 700;
+    font-size: 18px;
+    pointer-events: none;
+    animation: float-up 1s ease-out forwards;
+  }
+}
+
+/* Animations */
+@keyframes pulse-border {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(88, 166, 255, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 0 4px rgba(88, 166, 255, 0.1);
+  }
+}
+
+@keyframes pop-in {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scale(1.02);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes float-up {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+}
+
+@keyframes blink {
+
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.cursor-blink {
+  animation: blink 1s infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.confetti {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  animation: confetti-fall 3s linear forwards;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--terminal-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--terminal-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
