@@ -190,14 +190,12 @@ const labReducer = (state, action) => {
 
         case ACTIONS.COMPLETE_LEVEL: {
             const { levelId } = action.payload;
-            // Calculate next level ID (e.g., '1-1' -> '1-2', '1-10' -> '2-1')
-            const [unitId, levelNum] = levelId.split('-').map(Number);
-            const nextLevelId = levelNum < 10 ? `${unitId}-${levelNum + 1}` : `${unitId + 1}-1`;
+            const nextLevel = getNextLevel(levelId);
 
             newState = {
                 ...state,
                 completedLevels: [...new Set([...state.completedLevels, levelId])],
-                unlockedLevels: [...new Set([...state.unlockedLevels, nextLevelId])],
+                unlockedLevels: [...new Set([...state.unlockedLevels, nextLevel ? nextLevel.id : null])].filter(Boolean),
                 currentView: 'celebration',
             };
             break;
