@@ -38,11 +38,17 @@ const AuthScreen = () => {
         try {
             if (isLogin) {
                 const { error } = await signIn(email, password);
-                if (error) throw error;
+                if (error) {
+                    // Handle specific error cases
+                    if (error.message.toLowerCase().includes('email not confirmed')) {
+                        throw new Error('Please check your email and click the confirmation link before logging in.');
+                    }
+                    throw error;
+                }
             } else {
                 const { error } = await signUp(email, password);
                 if (error) throw error;
-                setSuccess('Check your email to confirm your account!');
+                setSuccess('✅ Account created! Check your email (and spam folder) to confirm before logging in.');
             }
         } catch (err) {
             setError(err.message || 'An error occurred');
