@@ -49,17 +49,26 @@ const Guidebook = ({ onClose, initialUnit = 1 }) => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    {/* Toggle Flashcards */}
-                    <button
-                        onClick={() => { setShowFlashcards(!showFlashcards); setCurrentCardIndex(0); setIsFlipped(false); }}
-                        className="px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                        style={{
-                            backgroundColor: showFlashcards ? '#9333ea' : '#21262d',
-                            color: showFlashcards ? 'white' : '#8b949e',
-                        }}
-                    >
-                        🃏 {showFlashcards ? 'Guide' : 'Cards'}
-                    </button>
+                    {/* Back to Guide button when in flashcards */}
+                    {showFlashcards && (
+                        <button
+                            onClick={() => { setShowFlashcards(false); setCurrentCardIndex(0); setIsFlipped(false); }}
+                            className="px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
+                            style={{ backgroundColor: '#58cc02', color: 'white', boxShadow: '0 2px 0 #46a302' }}
+                        >
+                            ← Back to Guide
+                        </button>
+                    )}
+                    {/* Toggle to Flashcards (only show when NOT in flashcards) */}
+                    {!showFlashcards && (
+                        <button
+                            onClick={() => { setShowFlashcards(true); setCurrentCardIndex(0); setIsFlipped(false); }}
+                            className="px-3 py-2 rounded-lg text-xs font-bold transition-all"
+                            style={{ backgroundColor: '#9333ea', color: 'white' }}
+                        >
+                            🃏 Flashcards
+                        </button>
+                    )}
                     <button
                         onClick={onClose}
                         className="w-10 h-10 rounded-full flex items-center justify-center text-xl"

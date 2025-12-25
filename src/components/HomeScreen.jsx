@@ -60,7 +60,7 @@ const HomeScreen = () => {
             {/* Mobile Menu Overlay */}
             {showMobileMenu && (
                 <div
-                    className="lg:hidden fixed inset-0 z-40"
+                    className="lg:hidden fixed inset-0 z-[60]"
                     style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
                     onClick={() => setShowMobileMenu(false)}
                 >
