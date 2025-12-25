@@ -157,16 +157,24 @@ const syncToSupabase = async (state, userId) => {
     }
 };
 
-// Load progress from Supabase (for authenticated users)
-const loadFromSupabase = async (userId) => {
+// Load progress from Supabase (for authenticated users) with timeout
+const loadFromSupabase = async (userId, timeoutMs = 3000) => {
     if (!userId || !isSupabaseConfigured()) return null;
 
     try {
-        const { data, error } = await supabase
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Supabase fetch timeout')), timeoutMs)
+        );
+
+        // Race between Supabase fetch and timeout
+        const fetchPromise = supabase
             .from('user_progress')
             .select('*')
             .eq('user_id', userId)
             .single();
+
+        const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
 
         if (error) {
             if (error.code !== 'PGRST116') { // PGRST116 = no rows found
@@ -177,7 +185,11 @@ const loadFromSupabase = async (userId) => {
 
         return data;
     } catch (e) {
-        console.error('Supabase load error:', e);
+        if (e.message === 'Supabase fetch timeout') {
+            console.warn('⏱️ Cloud sync timed out, using local data');
+        } else {
+            console.error('Supabase load error:', e);
+        }
         return null;
     }
 };
