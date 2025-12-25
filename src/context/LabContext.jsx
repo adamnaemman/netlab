@@ -1,7 +1,7 @@
 import { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
 import { parseCommand, getPrompt, getHelpText } from '../logic/commandParser';
 import { createInitialLabState, executeAction } from '../logic/networkState';
-import { levels, getLevelById } from '../data/levels';
+import { levels, getLevelById, getNextLevel } from '../data/levels';
 import { commandModes } from '../data/commands';
 
 const LabContext = createContext(null);
@@ -82,13 +82,25 @@ const loadState = (userId) => {
                 }
             }
 
+            const completedLevels = parsed.completedLevels || [];
+            let unlockedLevels = parsed.unlockedLevels || ['1-1'];
+
+            // Repair Logic: Ensure all next levels of completed levels are unlocked
+            // This fixes issues when new levels are inserted into the middle of the progression
+            completedLevels.forEach(levelId => {
+                const next = getNextLevel(levelId);
+                if (next && !unlockedLevels.includes(next.id)) {
+                    unlockedLevels.push(next.id);
+                }
+            });
+
             return {
                 ...fresh,
                 xp: parsed.xp || 0,
                 streak: parsed.streak || 0,
                 lastActiveDate: today,
-                completedLevels: parsed.completedLevels || [],
-                unlockedLevels: parsed.unlockedLevels || ['1-1'],
+                completedLevels,
+                unlockedLevels: [...new Set(unlockedLevels)],
                 levelProgress: parsed.levelProgress || {},
                 currentUserId: userId,
             };
