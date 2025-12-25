@@ -51,13 +51,22 @@ const createInitialState = () => {
         // Session state
         sessionXP: 0,
         sessionMistakes: 0,
+
+        // User tracking
+        currentUserId: null,
     };
 };
 
+// Get storage key for user
+const getStorageKey = (userId) => {
+    return userId ? `netLabProgress_${userId}` : 'netLabProgress_guest';
+};
+
 // Load state from localStorage
-const loadState = () => {
+const loadState = (userId) => {
     try {
-        const saved = localStorage.getItem('netLabProgress');
+        const key = getStorageKey(userId);
+        const saved = localStorage.getItem(key);
         if (saved) {
             const parsed = JSON.parse(saved);
             const fresh = createInitialState();
@@ -81,18 +90,20 @@ const loadState = () => {
                 completedLevels: parsed.completedLevels || [],
                 unlockedLevels: parsed.unlockedLevels || ['1-1'],
                 levelProgress: parsed.levelProgress || {},
+                currentUserId: userId,
             };
         }
     } catch (e) {
         console.error('Failed to load progress:', e);
     }
-    return createInitialState();
+    return { ...createInitialState(), currentUserId: userId };
 };
 
 // Save progress to localStorage
 const saveProgress = (state) => {
     try {
-        localStorage.setItem('netLabProgress', JSON.stringify({
+        const key = getStorageKey(state.currentUserId);
+        localStorage.setItem(key, JSON.stringify({
             xp: state.xp,
             streak: state.streak,
             lastActiveDate: state.lastActiveDate,
@@ -297,8 +308,14 @@ const labReducer = (state, action) => {
 };
 
 // Provider
-export const LabProvider = ({ children }) => {
-    const [state, dispatch] = useReducer(labReducer, null, loadState);
+export const LabProvider = ({ children, userId }) => {
+    const [state, dispatch] = useReducer(labReducer, userId, (uid) => loadState(uid));
+
+    // Reload progress when user changes
+    useEffect(() => {
+        const newState = loadState(userId);
+        dispatch({ type: ACTIONS.LOAD_PROGRESS, payload: newState });
+    }, [userId]);
 
     // Update streak on mount
     useEffect(() => {

@@ -241,7 +241,7 @@ const AppContent = () => {
 
 // Auth-aware wrapper
 const AuthWrapper = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user, isGuest } = useAuth();
 
   // Show loading spinner while checking auth
   if (loading) {
@@ -263,9 +263,12 @@ const AuthWrapper = () => {
     return <AuthScreen />;
   }
 
+  // Get user ID for progress storage (use 'guest' for guest mode, user.id for logged in users)
+  const userId = isGuest ? 'guest' : user?.id;
+
   // Show main app if authenticated
   return (
-    <LabProvider>
+    <LabProvider userId={userId}>
       <AppContent />
     </LabProvider>
   );
