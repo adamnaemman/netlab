@@ -189,11 +189,13 @@ const AuthScreen = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-4 rounded-xl font-black text-lg transition-all active:scale-98 disabled:opacity-50"
+                        className="w-full py-3 sm:py-4 rounded-xl font-black text-base sm:text-lg transition-all active:scale-95 disabled:opacity-50 cursor-pointer select-none"
                         style={{
                             backgroundColor: isLogin ? '#58cc02' : '#1cb0f6',
                             color: 'white',
                             boxShadow: isLogin ? '0 4px 0 #46a302' : '0 4px 0 #1899d6',
+                            touchAction: 'manipulation',
+                            WebkitTapHighlightColor: 'transparent',
                         }}
                     >
                         {loading ? '⏳ Loading...' : isLogin ? 'LOGIN' : 'CREATE ACCOUNT'}
@@ -210,11 +212,13 @@ const AuthScreen = () => {
                 {/* Guest Button */}
                 <button
                     onClick={continueAsGuest}
-                    className="w-full py-4 rounded-xl font-bold text-sm transition-all active:scale-98"
+                    className="w-full py-3 sm:py-4 rounded-xl font-bold text-sm transition-all active:scale-95 cursor-pointer select-none"
                     style={{
                         backgroundColor: '#21262d',
                         color: '#8b949e',
                         border: '2px solid #30363d',
+                        touchAction: 'manipulation',
+                        WebkitTapHighlightColor: 'transparent',
                     }}
                 >
                     👤 Continue as Guest
