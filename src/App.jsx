@@ -160,8 +160,8 @@ const LabView = () => {
               </span>
             </div>
 
-            {/* Hint */}
-            {currentStep && (
+            {/* Hint - Hidden if no hint */}
+            {currentStep?.hint && (
               <div
                 className="px-4 py-2"
                 style={{ backgroundColor: '#0d1117', borderTop: '1px solid #30363d' }}

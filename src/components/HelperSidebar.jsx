@@ -60,31 +60,33 @@ const HelperSidebar = () => {
                         {currentStep.description}
                     </p>
 
-                    {/* Hint box - Wrapped */}
-                    <div
-                        className="p-3 rounded-lg"
-                        style={{ backgroundColor: '#0d1117', border: '1px solid #30363d' }}
-                    >
-                        <div className="flex items-start gap-2">
-                            <span className="flex-shrink-0">💡</span>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-xs sm:text-sm break-words" style={{ color: '#8b949e' }}>
-                                    {currentStep.hint}
-                                </p>
-                                {state.sessionMistakes > 0 && (
-                                    <div className="mt-2">
-                                        <span className="text-xs" style={{ color: '#8b949e' }}>Command: </span>
-                                        <code
-                                            className="text-xs px-2 py-1 rounded break-all inline-block mt-1"
-                                            style={{ backgroundColor: '#21262d', color: '#58a6ff' }}
-                                        >
-                                            {currentStep.command}
-                                        </code>
-                                    </div>
-                                )}
+                    {/* Hint box - Hidden if no hint */}
+                    {currentStep.hint && (
+                        <div
+                            className="p-3 rounded-lg"
+                            style={{ backgroundColor: '#0d1117', border: '1px solid #30363d' }}
+                        >
+                            <div className="flex items-start gap-2">
+                                <span className="flex-shrink-0">💡</span>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs sm:text-sm break-words" style={{ color: '#8b949e' }}>
+                                        {currentStep.hint}
+                                    </p>
+                                    {state.sessionMistakes > 0 && (
+                                        <div className="mt-2">
+                                            <span className="text-xs" style={{ color: '#8b949e' }}>Command: </span>
+                                            <code
+                                                className="text-xs px-2 py-1 rounded break-all inline-block mt-1"
+                                                style={{ backgroundColor: '#21262d', color: '#58a6ff' }}
+                                            >
+                                                {currentStep.command}
+                                            </code>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* XP reward */}
                     <div className="mt-3 text-xs sm:text-sm" style={{ color: '#ffc800' }}>
