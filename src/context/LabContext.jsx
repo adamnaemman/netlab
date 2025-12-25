@@ -422,8 +422,13 @@ export const LabProvider = ({ children, userId }) => {
                     const cloudCompleted = cloudData.completed_levels?.length || 0;
                     const localCompleted = localState.completedLevels?.length || 0;
 
-                    // Use cloud data if it has more progress, otherwise keep local
-                    const useCloud = cloudXP > localXP || cloudCompleted > localCompleted;
+                    // Use cloud data if:
+                    // 1. Cloud has more XP, OR
+                    // 2. Cloud has more completed levels, OR
+                    // 3. Local is empty (new device) and cloud has any progress
+                    const localIsEmpty = localXP === 0 && localCompleted === 0;
+                    const cloudHasProgress = cloudXP > 0 || cloudCompleted > 0;
+                    const useCloud = cloudXP > localXP || cloudCompleted > localCompleted || (localIsEmpty && cloudHasProgress);
 
                     if (useCloud) {
                         // Repair unlocked levels based on completed levels
@@ -448,6 +453,8 @@ export const LabProvider = ({ children, userId }) => {
                         };
 
                         dispatch({ type: ACTIONS.LOAD_PROGRESS, payload: mergedState });
+                        // Also save to localStorage for offline access
+                        saveProgress(mergedState);
                         console.log('☁️ Progress loaded from cloud');
                     } else {
                         // Local has more progress, sync it to cloud
