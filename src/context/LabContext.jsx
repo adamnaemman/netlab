@@ -364,9 +364,45 @@ export const LabProvider = ({ children, userId }) => {
         // Check if this matches the current step
         let matchesStep = false;
         if (currentStep) {
+            // First, try exact string matching (for backward compatibility)
             const expectedCmd = currentStep.command.toLowerCase();
             const alternates = (currentStep.alternateCommands || []).map(c => c.toLowerCase());
-            matchesStep = trimmedInput === expectedCmd || alternates.includes(trimmedInput);
+            const exactMatch = trimmedInput === expectedCmd || alternates.includes(trimmedInput);
+
+            // Second, check if both commands parse to the same action with same parameters
+            // This allows variations like "configure t", "conf t", "configure terminal" to all match
+            if (!exactMatch) {
+                const expectedParsed = parseCommand(currentStep.command, device.mode);
+                if (expectedParsed.success && parseResult.success) {
+                    // Check if same action type
+                    if (parseResult.action === expectedParsed.action) {
+                        // For mode changes, check target mode matches
+                        if (parseResult.action === 'changeMode') {
+                            matchesStep = parseResult.targetMode === expectedParsed.targetMode;
+                        }
+                        // For interface selection, check interface matches
+                        else if (parseResult.action === 'selectInterface' || parseResult.action === 'selectSubinterface') {
+                            matchesStep = parseResult.params?.interface === expectedParsed.params?.interface;
+                        }
+                        // For IP address, check both IP and mask
+                        else if (parseResult.action === 'setIpAddress') {
+                            matchesStep = parseResult.params?.ip === expectedParsed.params?.ip &&
+                                parseResult.params?.mask === expectedParsed.params?.mask;
+                        }
+                        // For other commands with no params, just matching action is enough
+                        else if (['enableInterface', 'disableInterface', 'exitMode', 'showRunning',
+                            'showIpRoute', 'showVlan', 'showInterfaces'].includes(parseResult.action)) {
+                            matchesStep = true;
+                        }
+                        // For commands with simple params, check the main param
+                        else if (parseResult.params && expectedParsed.params) {
+                            matchesStep = JSON.stringify(parseResult.params) === JSON.stringify(expectedParsed.params);
+                        }
+                    }
+                }
+            } else {
+                matchesStep = true;
+            }
         }
 
         // Execute the action
