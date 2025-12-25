@@ -15,43 +15,51 @@ const AuthScreen = () => {
         e.preventDefault();
         setError('');
         setSuccess('');
-        setLoading(true);
 
-        if (!email || !password) {
+        const trimmedEmail = email.trim();
+        const trimmedPassword = password.trim();
+
+        if (!trimmedEmail || !trimmedPassword) {
             setError('Please fill in all fields');
-            setLoading(false);
             return;
         }
 
-        if (!isLogin && password !== confirmPassword) {
+        if (!isLogin && trimmedPassword !== confirmPassword.trim()) {
             setError('Passwords do not match');
-            setLoading(false);
             return;
         }
 
-        if (password.length < 6) {
+        if (trimmedPassword.length < 6) {
             setError('Password must be at least 6 characters');
-            setLoading(false);
             return;
         }
+
+        setLoading(true);
 
         try {
             if (isLogin) {
-                const { error } = await signIn(email, password);
+                const { error } = await signIn(trimmedEmail, trimmedPassword);
                 if (error) {
                     // Handle specific error cases
                     if (error.message.toLowerCase().includes('email not confirmed')) {
                         throw new Error('Please check your email and click the confirmation link before logging in.');
                     }
+                    if (error.message.toLowerCase().includes('invalid login credentials')) {
+                        throw new Error('Incorrect email or password. Please try again.');
+                    }
                     throw error;
                 }
             } else {
-                const { error } = await signUp(email, password);
+                const { error } = await signUp(trimmedEmail, trimmedPassword);
                 if (error) throw error;
-                setSuccess('✅ Account created! Check your email (and spam folder) to confirm before logging in.');
+
+                // If Supabase immediately returns a user/session (confirmation disabled)
+                // the onAuthStateChange will handle redirection.
+                // Otherwise, show success message.
+                setSuccess('✅ Registration initiated! If you don\'t see the dashboard, check your email for a confirmation link.');
             }
         } catch (err) {
-            setError(err.message || 'An error occurred');
+            setError(err.message || 'An error occurred during authentication');
         } finally {
             setLoading(false);
         }
