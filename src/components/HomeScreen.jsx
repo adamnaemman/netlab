@@ -86,6 +86,26 @@ const HomeScreen = () => {
                             <NavItem icon="🛒" label="SHOP" onClick={() => { setShowMobileMenu(false); setComingSoon({ feature: 'Shop', icon: '🛒' }); }} />
                             <NavItem icon="👤" label="PROFILE" onClick={() => { setShowMobileMenu(false); setShowGuidebook(false); setShowProfile(true); }} />
                         </nav>
+
+                        {/* Mobile Auth Controls */}
+                        <div className="mt-8 pt-6 border-t" style={{ borderColor: '#30363d' }}>
+                            {isGuest && (
+                                <button
+                                    onClick={() => { setShowMobileMenu(false); signOut(); }}
+                                    className="w-full mb-4 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+                                    style={{ backgroundColor: '#1cb0f6', color: 'white', boxShadow: '0 4px 0 #1899d6' }}
+                                >
+                                    <span>✨</span> CREATE ACCOUNT
+                                </button>
+                            )}
+                            <button
+                                onClick={() => { setShowMobileMenu(false); signOut(); }}
+                                className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 opacity-70 hover:opacity-100 transition-all"
+                                style={{ backgroundColor: '#21262d', color: '#f85149', border: '1px solid #30363d' }}
+                            >
+                                🚪 {isGuest ? 'Exit Guest Mode' : 'Logout Settings'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -167,6 +187,32 @@ const HomeScreen = () => {
 
                         return (
                             <div key={unit.id} className="mb-8 lg:mb-12">
+                                {/* Guest Banner - Only for guest users on mobile, above Unit 1 */}
+                                {isGuest && unitIndex === 0 && (
+                                    <div
+                                        className="lg:hidden mx-auto max-w-lg mb-6 p-4 rounded-2xl animate-fade-in"
+                                        style={{
+                                            background: 'linear-gradient(135deg, #1cb0f6 0%, #0d90d1 100%)',
+                                            boxShadow: '0 4px 15px rgba(28, 176, 246, 0.3)'
+                                        }}
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-3xl">✨</div>
+                                            <div className="flex-1">
+                                                <p className="font-black text-white text-sm">Sync your progress!</p>
+                                                <p className="text-white/80 text-xs">Create an account to save your XP across devices.</p>
+                                            </div>
+                                            <button
+                                                onClick={signOut}
+                                                className="px-4 py-2 bg-white rounded-xl text-xs font-black"
+                                                style={{ color: '#1cb0f6' }}
+                                            >
+                                                SIGN UP
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Unit Header */}
                                 <div
                                     className="sticky top-14 lg:top-0 z-10 p-3 sm:p-4 rounded-xl lg:rounded-2xl mb-6 max-w-lg mx-auto"
