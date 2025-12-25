@@ -53,48 +53,48 @@ const AuthScreen = () => {
 
     return (
         <div
-            className="min-h-screen flex flex-col items-center justify-center p-4"
+            className="min-h-screen flex flex-col items-center justify-center p-3 sm:p-4"
             style={{ backgroundColor: '#0d1117' }}
         >
             {/* Logo & Branding */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-4 sm:mb-8">
                 <div
-                    className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center text-4xl mb-4"
-                    style={{ backgroundColor: '#58cc02', boxShadow: '0 6px 0 #46a302' }}
+                    className="w-14 h-14 sm:w-20 sm:h-20 mx-auto rounded-2xl flex items-center justify-center text-3xl sm:text-4xl mb-2 sm:mb-4"
+                    style={{ backgroundColor: '#58cc02', boxShadow: '0 4px 0 #46a302' }}
                 >
                     🌐
                 </div>
-                <h1 className="text-4xl font-black" style={{ color: '#58cc02' }}>NetLab</h1>
-                <p className="text-sm mt-2" style={{ color: '#8b949e' }}>
+                <h1 className="text-2xl sm:text-4xl font-black" style={{ color: '#58cc02' }}>NetLab</h1>
+                <p className="text-xs sm:text-sm mt-1 sm:mt-2" style={{ color: '#8b949e' }}>
                     Learn Cisco networking the fun way!
                 </p>
             </div>
 
             {/* Auth Card */}
             <div
-                className="w-full max-w-md rounded-3xl p-6"
-                style={{ backgroundColor: '#161b22', border: '3px solid #30363d' }}
+                className="w-full max-w-md rounded-2xl sm:rounded-3xl p-4 sm:p-6"
+                style={{ backgroundColor: '#161b22', border: '2px solid #30363d' }}
             >
                 {/* Tabs */}
-                <div className="flex gap-2 mb-6">
+                <div className="flex gap-2 mb-4 sm:mb-6">
                     <button
                         onClick={() => { setIsLogin(true); setError(''); setSuccess(''); }}
-                        className="flex-1 py-3 rounded-xl font-bold text-sm transition-all"
+                        className="flex-1 py-2 sm:py-3 rounded-xl font-bold text-sm transition-all"
                         style={{
                             backgroundColor: isLogin ? '#58cc02' : '#21262d',
                             color: isLogin ? 'white' : '#8b949e',
-                            boxShadow: isLogin ? '0 4px 0 #46a302' : 'none',
+                            boxShadow: isLogin ? '0 3px 0 #46a302' : 'none',
                         }}
                     >
                         Login
                     </button>
                     <button
                         onClick={() => { setIsLogin(false); setError(''); setSuccess(''); }}
-                        className="flex-1 py-3 rounded-xl font-bold text-sm transition-all"
+                        className="flex-1 py-2 sm:py-3 rounded-xl font-bold text-sm transition-all"
                         style={{
                             backgroundColor: !isLogin ? '#1cb0f6' : '#21262d',
                             color: !isLogin ? 'white' : '#8b949e',
-                            boxShadow: !isLogin ? '0 4px 0 #1899d6' : 'none',
+                            boxShadow: !isLogin ? '0 3px 0 #1899d6' : 'none',
                         }}
                     >
                         Register
@@ -102,9 +102,9 @@ const AuthScreen = () => {
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
                     <div>
-                        <label className="block text-xs font-bold mb-2" style={{ color: '#8b949e' }}>
+                        <label className="block text-xs font-bold mb-1" style={{ color: '#8b949e' }}>
                             Email
                         </label>
                         <input
@@ -112,7 +112,7 @@ const AuthScreen = () => {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="your@email.com"
-                            className="w-full px-4 py-3 rounded-xl text-sm font-medium outline-none transition-all"
+                            className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-xl text-sm font-medium outline-none transition-all"
                             style={{
                                 backgroundColor: '#0d1117',
                                 border: '2px solid #30363d',

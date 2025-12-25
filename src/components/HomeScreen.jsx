@@ -79,12 +79,12 @@ const HomeScreen = () => {
                             <span className="text-2xl font-black" style={{ color: '#58cc02' }}>NetLab</span>
                         </div>
                         <nav className="space-y-2">
-                            <NavItem icon="🏠" label="LEARN" active onClick={() => setShowMobileMenu(false)} />
-                            <NavItem icon="📖" label="GUIDEBOOK" onClick={() => { setShowMobileMenu(false); openGuidebook(); }} />
+                            <NavItem icon="🏠" label="LEARN" active onClick={() => { setShowMobileMenu(false); setShowGuidebook(false); setShowProfile(false); }} />
+                            <NavItem icon="📖" label="GUIDEBOOK" onClick={() => { setShowMobileMenu(false); setShowProfile(false); openGuidebook(); }} />
                             <NavItem icon="⌨️" label="PRACTICE" onClick={() => { setShowMobileMenu(false); setComingSoon({ feature: 'Practice Mode', icon: '⌨️' }); }} />
                             <NavItem icon="🏆" label="LEADERBOARDS" onClick={() => { setShowMobileMenu(false); setComingSoon({ feature: 'Leaderboards', icon: '🏆' }); }} />
                             <NavItem icon="🛒" label="SHOP" onClick={() => { setShowMobileMenu(false); setComingSoon({ feature: 'Shop', icon: '🛒' }); }} />
-                            <NavItem icon="👤" label="PROFILE" onClick={() => { setShowMobileMenu(false); setShowProfile(true); }} />
+                            <NavItem icon="👤" label="PROFILE" onClick={() => { setShowMobileMenu(false); setShowGuidebook(false); setShowProfile(true); }} />
                         </nav>
                     </div>
                 </div>
@@ -395,11 +395,11 @@ const HomeScreen = () => {
                 className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-around py-2 px-4"
                 style={{ backgroundColor: '#161b22', borderTop: '3px solid #30363d' }}
             >
-                <BottomNavItem icon="🏠" label="Learn" active />
-                <BottomNavItem icon="📖" label="Guide" onClick={() => openGuidebook()} />
+                <BottomNavItem icon="🏠" label="Learn" active onClick={() => { setShowGuidebook(false); setShowProfile(false); }} />
+                <BottomNavItem icon="📖" label="Guide" onClick={() => { setShowProfile(false); openGuidebook(); }} />
                 <BottomNavItem icon="🏆" label="Ranks" onClick={() => setComingSoon({ feature: 'Leaderboards', icon: '🏆' })} />
                 <BottomNavItem icon="🎯" label="Quests" onClick={() => setComingSoon({ feature: 'Quests', icon: '🎯' })} />
-                <BottomNavItem icon="👤" label="Profile" onClick={() => setShowProfile(true)} />
+                <BottomNavItem icon="👤" label="Profile" onClick={() => { setShowGuidebook(false); setShowProfile(true); }} />
             </div>
         </div>
     );
