@@ -213,6 +213,12 @@ const AuthScreen = () => {
                         <button
                             type="submit"
                             disabled={loading}
+                            onClick={(e) => {
+                                // Ensure the form submits on mobile touch
+                                if (!loading) {
+                                    handleSubmit(e);
+                                }
+                            }}
                             className="group relative w-full h-14 sm:h-16 rounded-2xl font-black text-lg sm:text-xl transition-all active:scale-95 disabled:opacity-50 cursor-pointer select-none overflow-hidden"
                             style={{
                                 backgroundColor: isLogin ? '#58cc02' : '#1cb0f6',
@@ -220,12 +226,14 @@ const AuthScreen = () => {
                                 boxShadow: isLogin ? '0 6px 0 #3d8c02' : '0 6px 0 #1899d6',
                                 touchAction: 'manipulation',
                                 WebkitTapHighlightColor: 'transparent',
+                                zIndex: 50,
+                                position: 'relative',
                             }}
                         >
-                            <span className="relative z-10">
+                            <span className="relative z-10 pointer-events-none">
                                 {loading ? '⏳ PROCESSING...' : isLogin ? 'LOGIN NOW' : 'CREATE ACCOUNT'}
                             </span>
-                            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                         </button>
                     </form>
 
