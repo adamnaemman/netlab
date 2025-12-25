@@ -9,11 +9,17 @@ CREATE TABLE IF NOT EXISTS user_progress (
   hearts INTEGER DEFAULT 5,
   streak INTEGER DEFAULT 0,
   completed_levels TEXT[] DEFAULT '{}',
+  unlocked_levels TEXT[] DEFAULT ARRAY['1-1'],
+  level_progress JSONB DEFAULT '{}',
   last_activity TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id)
 );
+
+-- If the table already exists, add the new columns (run separately if needed)
+-- ALTER TABLE user_progress ADD COLUMN IF NOT EXISTS unlocked_levels TEXT[] DEFAULT ARRAY['1-1'];
+-- ALTER TABLE user_progress ADD COLUMN IF NOT EXISTS level_progress JSONB DEFAULT '{}';
 
 -- Enable Row Level Security
 ALTER TABLE user_progress ENABLE ROW LEVEL SECURITY;

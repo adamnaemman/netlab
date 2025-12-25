@@ -1,8 +1,9 @@
-import { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
+import { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react';
 import { parseCommand, getPrompt, getHelpText } from '../logic/commandParser';
 import { createInitialLabState, executeAction } from '../logic/networkState';
 import { levels, getLevelById, getNextLevel } from '../data/levels';
 import { commandModes } from '../data/commands';
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
 const LabContext = createContext(null);
 
@@ -115,17 +116,79 @@ const loadState = (userId) => {
 const saveProgress = (state) => {
     try {
         const key = getStorageKey(state.currentUserId);
-        localStorage.setItem(key, JSON.stringify({
+        const progressData = {
             xp: state.xp,
             streak: state.streak,
             lastActiveDate: state.lastActiveDate,
             completedLevels: state.completedLevels,
             unlockedLevels: state.unlockedLevels,
             levelProgress: state.levelProgress,
-        }));
+        };
+        localStorage.setItem(key, JSON.stringify(progressData));
     } catch (e) {
         console.error('Failed to save progress:', e);
     }
+};
+
+// Sync progress to Supabase (for authenticated users)
+const syncToSupabase = async (state, userId) => {
+    if (!userId || !isSupabaseConfigured()) return;
+
+    try {
+        const { error } = await supabase
+            .from('user_progress')
+            .upsert({
+                user_id: userId,
+                xp: state.xp,
+                streak: state.streak,
+                completed_levels: state.completedLevels,
+                unlocked_levels: state.unlockedLevels,
+                level_progress: state.levelProgress,
+                last_activity: new Date().toISOString(),
+            }, { onConflict: 'user_id' });
+
+        if (error) {
+            console.error('Failed to sync to Supabase:', error);
+        } else {
+            console.log('✅ Progress synced to cloud');
+        }
+    } catch (e) {
+        console.error('Supabase sync error:', e);
+    }
+};
+
+// Load progress from Supabase (for authenticated users)
+const loadFromSupabase = async (userId) => {
+    if (!userId || !isSupabaseConfigured()) return null;
+
+    try {
+        const { data, error } = await supabase
+            .from('user_progress')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+
+        if (error) {
+            if (error.code !== 'PGRST116') { // PGRST116 = no rows found
+                console.error('Failed to load from Supabase:', error);
+            }
+            return null;
+        }
+
+        return data;
+    } catch (e) {
+        console.error('Supabase load error:', e);
+        return null;
+    }
+};
+
+// Debounce helper
+let syncTimeout = null;
+const debouncedSync = (state, userId, delay = 2000) => {
+    if (syncTimeout) clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(() => {
+        syncToSupabase(state, userId);
+    }, delay);
 };
 
 // Reducer
@@ -312,8 +375,14 @@ const labReducer = (state, action) => {
             return state;
     }
 
-    // Save progress after state changes
+    // Save progress after state changes (to localStorage)
     saveProgress(newState);
+
+    // Also sync to Supabase for authenticated users (debounced)
+    if (newState.currentUserId) {
+        debouncedSync(newState, newState.currentUserId);
+    }
+
     return newState;
 };
 
@@ -321,10 +390,67 @@ const labReducer = (state, action) => {
 export const LabProvider = ({ children, userId }) => {
     const [state, dispatch] = useReducer(labReducer, userId, (uid) => loadState(uid));
 
-    // Reload progress when user changes
+    // Reload progress when user changes (localStorage first, then Supabase)
     useEffect(() => {
-        const newState = loadState(userId);
-        dispatch({ type: ACTIONS.LOAD_PROGRESS, payload: newState });
+        const loadAndMergeProgress = async () => {
+            // Load from localStorage immediately (for fast UI)
+            const localState = loadState(userId);
+            dispatch({ type: ACTIONS.LOAD_PROGRESS, payload: localState });
+
+            // If authenticated, also fetch from Supabase and merge
+            if (userId && isSupabaseConfigured()) {
+                const cloudData = await loadFromSupabase(userId);
+
+                if (cloudData) {
+                    const today = new Date().toDateString();
+
+                    // Determine which data source has more progress
+                    const cloudXP = cloudData.xp || 0;
+                    const localXP = localState.xp || 0;
+                    const cloudCompleted = cloudData.completed_levels?.length || 0;
+                    const localCompleted = localState.completedLevels?.length || 0;
+
+                    // Use cloud data if it has more progress, otherwise keep local
+                    const useCloud = cloudXP > localXP || cloudCompleted > localCompleted;
+
+                    if (useCloud) {
+                        // Repair unlocked levels based on completed levels
+                        const completedLevels = cloudData.completed_levels || [];
+                        let unlockedLevels = cloudData.unlocked_levels || ['1-1'];
+
+                        completedLevels.forEach(levelId => {
+                            const next = getNextLevel(levelId);
+                            if (next && !unlockedLevels.includes(next.id)) {
+                                unlockedLevels.push(next.id);
+                            }
+                        });
+
+                        const mergedState = {
+                            ...localState,
+                            xp: cloudData.xp || 0,
+                            streak: cloudData.streak || 0,
+                            lastActiveDate: today,
+                            completedLevels,
+                            unlockedLevels: [...new Set(unlockedLevels)],
+                            levelProgress: cloudData.level_progress || {},
+                        };
+
+                        dispatch({ type: ACTIONS.LOAD_PROGRESS, payload: mergedState });
+                        console.log('☁️ Progress loaded from cloud');
+                    } else {
+                        // Local has more progress, sync it to cloud
+                        syncToSupabase(localState, userId);
+                        console.log('📤 Local progress synced to cloud');
+                    }
+                } else {
+                    // No cloud data exists, create initial cloud record
+                    syncToSupabase(localState, userId);
+                    console.log('🆕 Created cloud progress record');
+                }
+            }
+        };
+
+        loadAndMergeProgress();
     }, [userId]);
 
     // Update streak on mount
