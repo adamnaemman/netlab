@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import LabActivity from './LabActivity';
 import ENSALabActivity from './ENSALabActivity';
+import PhysicalLabSim from './PhysicalLabSim';
+
 
 const PracticePage = ({ onClose }) => {
     const [expandedDevice, setExpandedDevice] = useState(null);
@@ -8,6 +10,8 @@ const PracticePage = ({ onClose }) => {
     const [copiedDevice, setCopiedDevice] = useState(null);
     const [showLab, setShowLab] = useState(false);
     const [showENSALab, setShowENSALab] = useState(false);
+    const [showPhysicalLab, setShowPhysicalLab] = useState(false);
+
 
     const copyToClipboard = (text, deviceId) => {
         navigator.clipboard.writeText(text);
@@ -54,7 +58,19 @@ const PracticePage = ({ onClose }) => {
                 <div className="max-w-4xl mx-auto space-y-6">
                     {[
                         {
+                            id: 'physical_lab',
+                            title: 'Physical Lab Training',
+                            subtitle: 'Cabling & Setup Procedure',
+                            description: 'Learn how to physically set up your lab hardware. Includes a cabling checklist and a realistic PuTTY simulator!',
+                            icon: '🔧',
+                            color: '#f0883e',
+                            shadow: '#9a5020',
+                            action: () => setShowPhysicalLab(true),
+                            devices: []
+                        },
+                        {
                             id: 'lab1',
+
                             title: 'Lab Activity 1',
                             subtitle: 'ENSA - OSPFv2 & NAT',
                             description: 'Configure R1, R2, S1, S2 with OSPFv2 routing, NAT with PAT, and basic device settings!',
@@ -576,7 +592,14 @@ end`
                     }}
                 />
             )}
+            {/* Physical Lab Activity Modal */}
+            {showPhysicalLab && (
+                <PhysicalLabSim
+                    onClose={() => setShowPhysicalLab(false)}
+                />
+            )}
         </div>
+
     );
 };
 
