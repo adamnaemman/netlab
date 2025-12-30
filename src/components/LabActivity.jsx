@@ -33,6 +33,8 @@ const LabActivity = ({ onClose, onComplete }) => {
     const [expandedReference, setExpandedReference] = useState(null);
     const [copiedDevice, setCopiedDevice] = useState(null);
     const [zoom, setZoom] = useState(1);
+    const [activeTab, setActiveTab] = useState('terminal');
+
 
 
     const desktopTerminalRef = useRef(null);
@@ -930,92 +932,257 @@ end`
                 </div>
             </div>
 
-            {/* Mobile Layout */}
-            <div className="lg:hidden flex-1 overflow-y-auto">
-                {/* Mobile Topology */}
-                <div className="p-4">
-                    <div
-                        className="rounded-xl p-3"
-                        style={{ backgroundColor: '#161b22', border: '2px solid #1cb0f6' }}
-                    >
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="text-lg">🗺️</span>
-                            <span className="font-bold text-sm" style={{ color: '#1cb0f6' }}>TOPOLOGY</span>
+            {/* Mobile View */}
+            <div className="lg:hidden flex-1 flex flex-col overflow-hidden relative">
+                {/* Mobile Tab Content */}
+                <div className="flex-1 overflow-y-auto">
+                    {activeTab === 'terminal' && (
+                        <div className="flex flex-col h-full bg-[#0d1117]">
+                            <div className="p-3 bg-[#161b22] border-b border-[#30363d] flex gap-2 overflow-x-auto scrollbar-none">
+                                {['R1', 'S1', 'S2'].map((device) => (
+                                    <button
+                                        key={device}
+                                        onClick={() => setCurrentDevice(device)}
+                                        className="px-3 py-1.5 rounded-lg font-bold text-xs whitespace-nowrap transition-all"
+                                        style={{
+                                            backgroundColor: currentDevice === device ? deviceColors[device] : '#30363d',
+                                            color: 'white',
+                                            opacity: currentStepData?.device === device ? 1 : 0.6,
+                                            border: currentStepData?.device === device ? `1px solid ${deviceColors[device]}` : 'none'
+                                        }}
+                                    >
+                                        {device} {currentStepData?.device === device && ' ●'}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="px-4 py-3 bg-[#1a2733] border-b border-[#30363d]">
+                                <div className="flex justify-between items-start mb-1">
+                                    <p className="text-[10px] font-bold text-[#8b949e]">STEP {currentStep + 1}/{totalSteps}</p>
+                                    <span className="text-[10px] font-bold text-[#ffc800]">+{currentStepData?.xp || 0} XP</span>
+                                </div>
+                                <p className="text-sm font-bold text-[#c9d1d9] leading-snug">{currentStepData?.description}</p>
+                                <p className="text-[11px] mt-1 text-[#58cc02] italic">💡 {currentStepData?.hint}</p>
+                            </div>
+                            <div
+                                ref={mobileTerminalRef}
+                                className="flex-1 p-4 font-mono text-[13px] overflow-y-auto"
+                                style={{ backgroundColor: '#0d1117' }}
+                                onClick={() => inputRef.current?.focus()}
+                            >
+                                {terminalHistory[currentDevice].map((line, i) => (
+                                    <div key={i} className="mb-0.5" style={{
+                                        color: line.type === 'success' ? '#58cc02' :
+                                            line.type === 'error' ? '#f85149' :
+                                                line.type === 'output' ? '#8b949e' : '#c9d1d9'
+                                    }}>
+                                        {line.text}
+                                    </div>
+                                ))}
+                                <form onSubmit={handleSubmit} className="flex items-center">
+                                    <span style={{ color: '#8b949e' }}>{getPrompt(currentDevice)}</span>
+                                    <input
+                                        type="text"
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        onFocus={handleInputFocus}
+                                        className="flex-1 bg-transparent outline-none ml-1"
+                                        style={{ color: '#c9d1d9' }}
+                                        autoFocus
+                                        spellCheck={false}
+                                    />
+                                </form>
+                                <div ref={bottomRef} style={{ height: 1 }} />
+                            </div>
                         </div>
-                        <div className="flex justify-center gap-4 text-center">
-                            {['R1', 'S1', 'S2'].map(device => (
-                                <button
-                                    key={device}
-                                    onClick={() => setCurrentDevice(device)}
-                                    className="px-4 py-2 rounded-lg font-bold text-sm"
+                    )}
+
+                    {activeTab === 'topology' && (
+                        <div className="h-full bg-[#0d1117] flex flex-col p-4">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-white flex items-center gap-2">
+                                    <span>🗺️</span> Topology
+                                </h3>
+                                <div className="flex bg-[#161b22] rounded-lg border border-[#30363d] overflow-hidden">
+                                    <button onClick={() => setZoom(prev => Math.min(prev + 0.2, 3))} className="px-3 py-2 text-white border-r border-[#30363d]">➕</button>
+                                    <button onClick={() => setZoom(1)} className="px-3 py-2 text-xs font-bold text-[#8b949e] border-r border-[#30363d]">RESET</button>
+                                    <button onClick={() => setZoom(prev => Math.max(prev - 0.2, 0.5))} className="px-3 py-2 text-white">➖</button>
+                                </div>
+                            </div>
+                            <div
+                                ref={topologyContainerRef}
+                                className="flex-1 rounded-2xl bg-[#161b22] border border-[#30363d] relative overflow-auto"
+                            >
+                                <svg
+                                    viewBox="0 0 500 300"
+                                    className="w-[100%] transition-transform duration-200 origin-center"
                                     style={{
-                                        backgroundColor: currentDevice === device ? deviceColors[device] : '#21262d',
-                                        color: 'white',
-                                        boxShadow: currentStepData?.device === device ? `0 0 10px ${deviceColors[device]}` : 'none'
+                                        minWidth: '500px',
+                                        minHeight: '300px',
+                                        transform: `scale(${zoom})`,
                                     }}
                                 >
-                                    {device === 'R1' ? '🌐' : '🔀'} {device}
-                                </button>
-                            ))}
+                                    {/* Connection Lines */}
+                                    <line x1="250" y1="70" x2="150" y2="130" stroke={completedSteps.length >= 21 ? '#3fb950' : '#30363d'} strokeWidth="3" />
+                                    <line x1="250" y1="70" x2="350" y2="130" stroke={completedSteps.length >= 21 ? '#3fb950' : '#30363d'} strokeWidth="3" />
+                                    <line x1="150" y1="180" x2="80" y2="240" stroke="#30363d" strokeWidth="2" />
+                                    <line x1="350" y1="180" x2="420" y2="240" stroke="#30363d" strokeWidth="2" />
+
+                                    <g transform="translate(250, 45)" onClick={() => { setCurrentDevice('R1'); setActiveTab('terminal'); }} style={{ cursor: 'pointer' }}>
+                                        <rect x="-48" y="-24" width="96" height="48" rx="10" fill={currentDevice === 'R1' ? '#58a6ff' : deviceColors.R1} />
+                                        <text x="0" y="5" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">{deviceHostnames.R1}</text>
+                                        <circle cx="55" cy="-10" r="12" fill="#0d1117" stroke="#8b949e" strokeWidth="2" />
+                                        <text x="55" y="-6" textAnchor="middle" fill="#8b949e" fontSize="8">Lo0</text>
+                                    </g>
+
+                                    <g transform="translate(150, 155)" onClick={() => { setCurrentDevice('S1'); setActiveTab('terminal'); }} style={{ cursor: 'pointer' }}>
+                                        <rect x="-54" y="-19" width="108" height="38" rx="6" fill={currentDevice === 'S1' ? '#58a6ff' : deviceColors.S1} />
+                                        <text x="0" y="5" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">{deviceHostnames.S1}</text>
+                                    </g>
+
+                                    <g transform="translate(350, 155)" onClick={() => { setCurrentDevice('S2'); setActiveTab('terminal'); }} style={{ cursor: 'pointer' }}>
+                                        <rect x="-54" y="-19" width="108" height="38" rx="6" fill={currentDevice === 'S2' ? '#58a6ff' : deviceColors.S2} />
+                                        <text x="0" y="5" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">{deviceHostnames.S2}</text>
+                                    </g>
+
+                                    <g transform="translate(80, 260)">
+                                        <rect x="-32" y="-20" width="64" height="40" rx="4" fill="#484f58" />
+                                        <text x="0" y="5" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">PC-A</text>
+                                    </g>
+
+                                    <g transform="translate(420, 260)">
+                                        <rect x="-32" y="-20" width="64" height="40" rx="4" fill="#484f58" />
+                                        <text x="0" y="5" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">PC-B</text>
+                                    </g>
+                                </svg>
+                            </div>
+                            <p className="mt-3 text-[10px] text-[#8b949e] italic text-center">💡 Pinch to zoom or use controls. Tap device to configure.</p>
                         </div>
-                    </div>
+                    )}
+
+                    {activeTab === 'reference' && (
+                        <div className="h-full bg-[#0d1117] p-4 flex flex-col gap-4">
+                            {/* Mobile Flashcard */}
+                            {currentStepData && (() => {
+                                const explanation = getExplanation(currentStepData.command);
+                                return (
+                                    <div className="rounded-2xl overflow-hidden border-2 border-[#58cc02] bg-[#0d1117]">
+                                        <div className="px-4 py-3 bg-[#1a2c32]">
+                                            <h3 className="font-bold text-[#58cc02]">📖 Quick Lesson: {explanation.title}</h3>
+                                        </div>
+                                        <div className="p-4 space-y-4">
+                                            <div>
+                                                <p className="text-[10px] font-black text-[#f0883e] mb-1">APA ITU?</p>
+                                                <p className="text-xs text-[#c9d1d9]">{explanation.what}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black text-[#1cb0f6] mb-1">KENAPA GUNA?</p>
+                                                <p className="text-xs text-[#c9d1d9]">{explanation.why}</p>
+                                            </div>
+                                            <div className="bg-black/40 p-3 rounded-xl border border-white/5">
+                                                <p className="text-[10px] font-black text-[#a371f7] mb-2">SYNTAX COMMAND</p>
+                                                <code className="text-xs text-[#7ee787] font-mono break-all">{explanation.syntax}</code>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Mobile Progress */}
+                            <div className="rounded-2xl border border-[#30363d] bg-[#161b22] p-4">
+                                <h3 className="font-bold text-white mb-4">📊 Progress</h3>
+                                <div className="space-y-2">
+                                    {[...new Set(labSteps.map(s => s.part))].map(partNum => {
+                                        const partSteps = labSteps.filter(s => s.part === partNum);
+                                        const partName = partSteps[0].partName;
+                                        const startIdx = labSteps.findIndex(s => s.part === partNum);
+                                        const completedInPart = partSteps.filter((_, i) => completedSteps.includes(startIdx + i)).length;
+                                        const isCurrentPart = currentStepData?.part === partNum;
+
+                                        return (
+                                            <div
+                                                key={partNum}
+                                                className="flex items-center justify-between px-3 py-2 rounded-lg"
+                                                style={{
+                                                    backgroundColor: isCurrentPart ? '#1a2c32' : '#0d1117',
+                                                    border: isCurrentPart ? '2px solid #58cc02' : '1px solid #30363d'
+                                                }}
+                                            >
+                                                <span className="text-[11px] font-bold text-white/80">{partName}</span>
+                                                <span className="text-[11px] font-bold text-[#58cc02]">{completedInPart}/{partSteps.length}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Mobile Reference Configs */}
+                            <div className="rounded-2xl border border-[#30363d] bg-[#161b22] p-4">
+                                <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+                                    <span>📋</span> Answer Keys
+                                </h3>
+                                <div className="space-y-3">
+                                    {['R1', 'S1', 'S2'].map(dev => (
+                                        <div key={dev} className="rounded-xl border border-[#30363d] bg-[#0d1117] overflow-hidden">
+                                            <button
+                                                onClick={() => setExpandedReference(expandedReference === dev ? null : dev)}
+                                                className="w-full p-4 flex items-center justify-between"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs" style={{ backgroundColor: deviceColors[dev], color: 'white' }}>
+                                                        {dev}
+                                                    </div>
+                                                    <span className="text-sm font-bold text-white">Full Config</span>
+                                                </div>
+                                                <span className={`transition-transform ${expandedReference === dev ? 'rotate-180' : ''}`} style={{ color: '#8b949e' }}>▼</span>
+                                            </button>
+                                            {expandedReference === dev && (
+                                                <div className="px-4 pb-4">
+                                                    <div className="relative">
+                                                        <button
+                                                            onClick={() => copyConfig(deviceConfigs[dev], dev)}
+                                                            className="absolute top-2 right-2 px-3 py-1 bg-[#30363d] text-[10px] font-bold rounded-lg text-white"
+                                                        >
+                                                            {copiedDevice === dev ? '✓ COPIED' : '📋 COPY'}
+                                                        </button>
+                                                        <pre className="p-4 bg-black rounded-xl text-[10px] font-mono leading-relaxed h-48 overflow-y-auto" style={{ color: '#7ee787' }}>
+                                                            {deviceConfigs[dev]}
+                                                        </pre>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Mobile Terminal */}
-                <div className="p-4 pt-0">
-                    <div
-                        className="rounded-xl overflow-hidden"
-                        style={{ border: '3px solid #58cc02' }}
-                    >
-                        <div className="flex items-center gap-2 px-3 py-2" style={{ backgroundColor: '#161b22' }}>
-                            <span className="text-lg">⌨️</span>
-                            <span className="font-bold text-sm" style={{ color: '#58cc02' }}>CLI TERMINAL</span>
-                        </div>
-
-                        {/* Current Task */}
-                        <div className="px-3 py-2" style={{ backgroundColor: '#1a2733' }}>
-                            <p className="text-xs" style={{ color: '#8b949e' }}>Step {currentStep + 1}/{totalSteps}</p>
-                            <p className="text-sm font-bold" style={{ color: '#c9d1d9' }}>{currentStepData?.description}</p>
-                            <p className="text-xs mt-1" style={{ color: '#58cc02' }}>💡 {currentStepData?.hint}</p>
-                        </div>
-
-                        {/* Terminal */}
-                        <div
-                            ref={mobileTerminalRef}
-                            className="h-48 p-3 font-mono text-xs overflow-y-auto"
-                            style={{ backgroundColor: '#0d1117' }}
-                            onClick={() => inputRef.current?.focus()}
+                {/* Mobile Bottom Navigation */}
+                <div className="flex bg-[#161b22] border-t border-[#30363d] pb-safe">
+                    {[
+                        { id: 'terminal', label: 'Terminal', icon: '⌨️' },
+                        { id: 'topology', label: 'Topology', icon: '🗺️' },
+                        { id: 'reference', label: 'Reference', icon: '📚' }
+                    ].map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className="flex-1 py-3 flex flex-col items-center gap-1 transition-all"
+                            style={{
+                                opacity: activeTab === tab.id ? 1 : 0.5,
+                                borderTop: activeTab === tab.id ? `3px solid ${tab.id === 'terminal' ? '#58cc02' : tab.id === 'topology' ? '#58a6ff' : '#1cb0f6'}` : '3px solid transparent'
+                            }}
                         >
-                            {terminalHistory[currentDevice].map((line, i) => (
-                                <div
-                                    key={i}
-                                    style={{
-                                        color: line.type === 'success' ? '#58cc02' :
-                                            line.type === 'error' ? '#f85149' : '#c9d1d9'
-                                    }}
-                                >
-                                    {line.text}
-                                </div>
-                            ))}
-                            <form onSubmit={handleSubmit} className="flex items-center">
-                                <span style={{ color: '#8b949e' }}>{getPrompt(currentDevice)}</span>
-                                <input
-                                    ref={inputRef}
-                                    type="text"
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    onFocus={handleInputFocus}
-                                    className="flex-1 bg-transparent outline-none ml-1"
-                                    style={{ color: '#c9d1d9' }}
-                                    autoFocus
-                                    spellCheck={false}
-                                />
-                            </form>
-                            {/* Scroll anchor - always stays at bottom */}
-                            <div ref={bottomRef} style={{ height: 1 }} />
-                        </div>
-                    </div>
+                            <span className="text-xl">{tab.icon}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-tighter" style={{
+                                color: activeTab === tab.id ? (tab.id === 'terminal' ? '#58cc02' : tab.id === 'topology' ? '#58a6ff' : '#1cb0f6') : '#8b949e'
+                            }}>
+                                {tab.label}
+                            </span>
+                        </button>
+                    ))}
                 </div>
             </div>
 
