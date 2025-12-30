@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Guidebook from './Guidebook';
 import ProfilePage from './ProfilePage';
 import ComingSoon from './ComingSoon';
+import PracticePage from './PracticePage';
 
 const HomeScreen = () => {
     const { state, startLevel, isLevelComplete, isLevelUnlocked } = useLab();
@@ -14,6 +15,7 @@ const HomeScreen = () => {
     const [guidebookUnit, setGuidebookUnit] = useState(1);
     const [showProfile, setShowProfile] = useState(false);
     const [comingSoon, setComingSoon] = useState(null); // {feature, icon}
+    const [showPractice, setShowPractice] = useState(false);
 
     const openGuidebook = (unitId = 1) => {
         setGuidebookUnit(unitId);
@@ -33,6 +35,9 @@ const HomeScreen = () => {
 
             {/* Coming Soon Modal */}
             {comingSoon && <ComingSoon feature={comingSoon.feature} icon={comingSoon.icon} onClose={() => setComingSoon(null)} />}
+
+            {/* Practice Page Modal */}
+            {showPractice && <PracticePage onClose={() => setShowPractice(false)} />}
 
             {/* Mobile Header */}
             <div
@@ -81,7 +86,7 @@ const HomeScreen = () => {
                         <nav className="space-y-2">
                             <NavItem icon="🏠" label="LEARN" active onClick={() => { setShowMobileMenu(false); setShowGuidebook(false); setShowProfile(false); }} />
                             <NavItem icon="📖" label="GUIDEBOOK" onClick={() => { setShowMobileMenu(false); setShowProfile(false); openGuidebook(); }} />
-                            <NavItem icon="⌨️" label="PRACTICE" onClick={() => { setShowMobileMenu(false); setComingSoon({ feature: 'Practice Mode', icon: '⌨️' }); }} />
+                            <NavItem icon="⌨️" label="PRACTICE" onClick={() => { setShowMobileMenu(false); setShowPractice(true); }} />
                             <NavItem icon="🏆" label="LEADERBOARDS" onClick={() => { setShowMobileMenu(false); setComingSoon({ feature: 'Leaderboards', icon: '🏆' }); }} />
                             <NavItem icon="🛒" label="SHOP" onClick={() => { setShowMobileMenu(false); setComingSoon({ feature: 'Shop', icon: '🛒' }); }} />
                             <NavItem icon="👤" label="PROFILE" onClick={() => { setShowMobileMenu(false); setShowGuidebook(false); setShowProfile(true); }} />
@@ -128,7 +133,7 @@ const HomeScreen = () => {
                     <nav className="space-y-2">
                         <NavItem icon="🏠" label="LEARN" active />
                         <NavItem icon="📖" label="GUIDEBOOK" onClick={() => openGuidebook()} />
-                        <NavItem icon="⌨️" label="PRACTICE" onClick={() => setComingSoon({ feature: 'Practice Mode', icon: '⌨️' })} />
+                        <NavItem icon="⌨️" label="PRACTICE" onClick={() => setShowPractice(true)} />
                         <NavItem icon="🏆" label="LEADERBOARDS" onClick={() => setComingSoon({ feature: 'Leaderboards', icon: '🏆' })} />
                         <NavItem icon="🛒" label="SHOP" onClick={() => setComingSoon({ feature: 'Shop', icon: '🛒' })} />
                         <NavItem icon="👤" label="PROFILE" onClick={() => setShowProfile(true)} />
