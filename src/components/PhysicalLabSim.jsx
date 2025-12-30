@@ -21,6 +21,7 @@ const PhysicalLabSim = ({ onClose }) => {
     });
     const [expandedPart, setExpandedPart] = useState(1);
     const [showCelebration, setShowCelebration] = useState(false);
+    const [activeTab, setActiveTab] = useState('terminal'); // 'terminal', 'instructions', 'status'
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
 
@@ -169,15 +170,16 @@ const PhysicalLabSim = ({ onClose }) => {
                 </div>
 
                 {/* Progress Bar */}
-                <div className="h-2 bg-black/50 shrink-0">
-                    <div className="h-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all duration-500" style={{ width: `${progress}%` }} />
+                <div className="h-1.5 bg-black/50 shrink-0">
+                    <div className="h-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all duration-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]" style={{ width: `${progress}%` }} />
                 </div>
 
-                <div className="flex-1 flex overflow-hidden">
-                    {/* Left Panel - Steps */}
-                    <div className="w-96 bg-[#161b22] border-r border-[#30363d] flex flex-col overflow-hidden shrink-0">
-                        <div className="p-4 border-b border-[#30363d] shrink-0">
+                <div className="flex-1 flex overflow-hidden relative">
+                    {/* Desktop Sidebar / Mobile Instructions Tab */}
+                    <div className={`${activeTab === 'instructions' ? 'flex' : 'hidden md:flex'} w-full md:w-96 bg-[#161b22] border-r border-[#30363d] flex-col overflow-hidden shrink-0 absolute inset-0 z-10 md:relative md:z-0`}>
+                        <div className="p-4 border-b border-[#30363d] shrink-0 flex justify-between items-center">
                             <h2 className="text-sm font-black text-white uppercase tracking-widest">Lab Instructions</h2>
+                            <span className="md:hidden text-[10px] font-bold text-[#f0883e] bg-[#f0883e]/10 px-2 py-1 rounded">Part {expandedPart}</span>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -234,73 +236,138 @@ const PhysicalLabSim = ({ onClose }) => {
                         </div>
                     </div>
 
-                    {/* Main Terminal Area */}
-                    <div className="flex-1 flex flex-col overflow-hidden">
-                        {/* Device Tabs */}
-                        <div className="bg-[#161b22] border-b border-[#30363d] p-3 flex gap-2 shrink-0">
-                            {['R1', 'R2', 'S1', 'S2'].map(dev => (
-                                <button
-                                    key={dev}
-                                    onClick={() => setCurrentDevice(dev)}
-                                    className={`px-6 py-3 rounded-xl font-black text-xs uppercase transition-all ${currentDevice === dev ? 'bg-[#f0883e] text-black shadow-lg shadow-[#f0883e]/30' : 'bg-[#21262d] text-white/40 hover:text-white'} ${currentStepData?.device === dev ? 'ring-2 ring-[#f0883e]/50 ring-offset-2 ring-offset-[#161b22]' : ''}`}
-                                >
-                                    {dev.startsWith('R') ? '🌐' : '⏹️'} {dev}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Terminal */}
-                        <div className="flex-1 bg-[#0d1117] p-6 overflow-hidden flex flex-col">
-                            <div className="flex-1 font-mono text-sm overflow-y-auto space-y-1 text-[#c9d1d9]">
-                                {terminalHistory[currentDevice].map((line, i) => (
-                                    <div key={i} className={`leading-relaxed ${line.type === 'input' ? 'text-white font-bold' :
-                                        line.type === 'success' ? 'text-green-400 font-bold' :
-                                            line.type === 'error' ? 'text-red-400' :
-                                                line.type === 'system' ? 'text-blue-400 italic' : ''
-                                        }`}>
-                                        {line.text}
-                                    </div>
-                                ))}
-                                <div ref={bottomRef} />
-                            </div>
-
-                            <form onSubmit={handleSubmit} className="mt-4 flex items-center gap-2 shrink-0">
-                                <span className="text-[#f0883e] font-mono font-bold">{getPrompt(currentDevice)}</span>
-                                <input
-                                    ref={inputRef}
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    className="flex-1 bg-transparent border-none outline-none font-mono text-white caret-[#f0883e]"
-                                    placeholder="Enter Cisco IOS command..."
-                                    autoFocus
-                                />
-                            </form>
-                        </div>
-
-                        {/* Current Step Hint */}
-                        {currentStepData && (
-                            <div className="bg-[#161b22] border-t border-[#30363d] p-4 flex items-center justify-between shrink-0">
-                                <div className="flex items-center gap-4">
-                                    <span className={`w-10 h-10 rounded-full flex items-center justify-center font-black ${currentStepData.device === currentDevice ? 'bg-[#f0883e] text-black' : 'bg-[#30363d] text-white/50'}`}>
-                                        {currentStepData.device}
-                                    </span>
-                                    <div>
-                                        <p className="text-xs font-black text-white uppercase">Step {currentStep + 1} of {totalSteps}</p>
-                                        <p className="text-sm text-white/60">{currentStepData.desc}</p>
+                    {/* Main Content Area */}
+                    <div className={`${activeTab === 'instructions' ? 'hidden md:flex' : 'flex'} flex-1 flex flex-col overflow-hidden`}>
+                        {/* Status/Device Tab (Mobile Only) */}
+                        {activeTab === 'status' && (
+                            <div className="md:hidden flex-1 overflow-y-auto bg-[#0d1117] p-6 space-y-8 animate-fade-in">
+                                <div>
+                                    <h3 className="text-xs font-black text-white/40 uppercase tracking-widest mb-4">Device Management</h3>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {['R1', 'R2', 'S1', 'S2'].map(dev => (
+                                            <button
+                                                key={dev}
+                                                onClick={() => {
+                                                    setCurrentDevice(dev);
+                                                    setActiveTab('terminal');
+                                                }}
+                                                className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all ${currentDevice === dev ? 'border-[#f0883e] bg-[#f0883e]/10' : 'border-[#30363d] bg-[#161b22]'}`}
+                                            >
+                                                <span className="text-2xl">{dev.startsWith('R') ? '🌐' : '⏹️'}</span>
+                                                <span className={`text-xs font-black ${currentDevice === dev ? 'text-[#f0883e]' : 'text-white'}`}>{dev}</span>
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-4">
-                                    <span className="text-[#f0883e] font-black text-sm">+{currentStepData.xp} XP</span>
+
+                                <div>
+                                    <h3 className="text-xs font-black text-white/40 uppercase tracking-widest mb-4">Session Progress</h3>
+                                    <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-6 space-y-4">
+                                        <div className="flex justify-between items-end">
+                                            <div>
+                                                <p className="text-[10px] font-bold text-white/40 uppercase">Total XP</p>
+                                                <p className="text-3xl font-black text-[#f0883e] leading-none">{xpEarned}/{totalXP}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] font-bold text-white/40 uppercase">Completed</p>
+                                                <p className="text-xl font-black text-white leading-none">{completedSteps.length}/{totalSteps}</p>
+                                            </div>
+                                        </div>
+                                        <div className="h-2 bg-black/50 rounded-full overflow-hidden">
+                                            <div className="h-full bg-[#f0883e]" style={{ width: `${progress}%` }} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Terminal (Visible on Desktop always, or Terminal Tab on mobile) */}
+                        <div className={`${activeTab === 'terminal' ? 'flex' : 'hidden md:flex'} flex-1 flex flex-col overflow-hidden`}>
+                            {/* Device Tabs (Desktop) */}
+                            <div className="hidden md:flex bg-[#161b22] border-b border-[#30363d] p-3 gap-2 shrink-0">
+                                {['R1', 'R2', 'S1', 'S2'].map(dev => (
+                                    <button
+                                        key={dev}
+                                        onClick={() => setCurrentDevice(dev)}
+                                        className={`px-6 py-3 rounded-xl font-black text-xs uppercase transition-all ${currentDevice === dev ? 'bg-[#f0883e] text-black shadow-lg shadow-[#f0883e]/30' : 'bg-[#21262d] text-white/40 hover:text-white'} ${currentStepData?.device === dev ? 'ring-2 ring-[#f0883e]/50 ring-offset-2 ring-offset-[#161b22]' : ''}`}
+                                    >
+                                        {dev.startsWith('R') ? '🌐' : '⏹️'} {dev}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Terminal */}
+                            <div className="flex-1 bg-[#0d1117] p-6 overflow-hidden flex flex-col">
+                                <div className="flex-1 font-mono text-sm overflow-y-auto space-y-1 text-[#c9d1d9]">
+                                    {terminalHistory[currentDevice].map((line, i) => (
+                                        <div key={i} className={`leading-relaxed ${line.type === 'input' ? 'text-white font-bold' :
+                                            line.type === 'success' ? 'text-green-400 font-bold' :
+                                                line.type === 'error' ? 'text-red-400' :
+                                                    line.type === 'system' ? 'text-blue-400 italic' : ''
+                                            }`}>
+                                            {line.text}
+                                        </div>
+                                    ))}
+                                    <div ref={bottomRef} />
+                                </div>
+
+                                <form onSubmit={handleSubmit} className="mt-4 flex items-center gap-2 shrink-0 border-t border-[#30363d] pt-4 md:border-none md:pt-0">
+                                    <span className="text-[#f0883e] font-mono font-bold text-xs md:text-sm whitespace-nowrap">{getPrompt(currentDevice)}</span>
+                                    <input
+                                        ref={inputRef}
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        className="flex-1 bg-transparent border-none outline-none font-mono text-sm md:text-base text-white caret-[#f0883e] min-w-0"
+                                        placeholder="Enter command..."
+                                        autoFocus
+                                    />
+                                </form>
+                            </div>
+                        </div>
+
+                        {/* Current Step Hint (Desktop only or mobile-specific display?) */}
+                        {currentStepData && activeTab !== 'status' && (
+                            <div className="bg-[#161b22] border-t border-[#30363d] p-3 md:p-4 flex items-center justify-between shrink-0">
+                                <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
+                                    <span className={`w-8 h-8 md:w-10 md:h-10 rounded-full shrink-0 flex items-center justify-center font-black text-xs md:text-base ${currentStepData.device === currentDevice ? 'bg-[#f0883e] text-black shadow-lg shadow-[#f0883e]/30' : 'bg-[#30363d] text-white/50'}`}>
+                                        {currentStepData.device}
+                                    </span>
+                                    <div className="overflow-hidden">
+                                        <p className="text-[10px] font-bold text-white/40 uppercase leading-none mb-1">Step {currentStep + 1} of {totalSteps}</p>
+                                        <p className="text-xs md:text-sm text-white/60 truncate">{currentStepData.desc}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                                    <span className="hidden sm:inline text-[#f0883e] font-black text-xs md:text-sm">+{currentStepData.xp} XP</span>
                                     <button
                                         onClick={() => navigator.clipboard.writeText(currentStepData.command)}
-                                        className="px-4 py-2 bg-[#21262d] hover:bg-[#30363d] rounded-lg text-xs font-bold text-white/60 hover:text-white transition-all"
+                                        className="p-2 md:px-4 md:py-2 bg-[#21262d] hover:bg-[#30363d] rounded-lg text-[10px] md:text-xs font-bold text-white/60 hover:text-white transition-all flex items-center gap-2"
                                     >
-                                        📄 Copy Hint
+                                        📄 <span className="hidden md:inline">Copy Hint</span>
                                     </button>
                                 </div>
                             </div>
                         )}
                     </div>
+                </div>
+
+                {/* Mobile Bottom Navigation */}
+                <div className="md:hidden h-20 bg-[#161b22] border-t border-[#30363d] grid grid-cols-3 shrink-0 pb-safe">
+                    {[
+                        { id: 'instructions', label: 'Steps', icon: '📋' },
+                        { id: 'terminal', label: 'Terminal', icon: '⌨️' },
+                        { id: 'status', label: 'Status', icon: '📊' }
+                    ].map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex flex-col items-center justify-center gap-1 transition-all ${activeTab === tab.id ? 'text-[#f0883e]' : 'text-white/40'}`}
+                        >
+                            <span className="text-xl shrink-0">{tab.icon}</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">{tab.label}</span>
+                            {activeTab === tab.id && <div className="w-8 h-1 bg-[#f0883e] rounded-full mt-1" />}
+                        </button>
+                    ))}
                 </div>
             </div>
 
