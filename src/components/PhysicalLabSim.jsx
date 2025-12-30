@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { enterpriseLabData } from '../data/enterpriseLab';
 
 const PhysicalLabSim = ({ onClose }) => {
     const [view, setView] = useState('workspace'); // 'workspace', 'terminal'
-    const [devices, setDevices] = useState([]); // { id, type, x, y, name, hostname, history }
-    const [connections, setConnections] = useState([]); // { id, from {devId, portId}, to {devId, portId}, type }
+    const [devices, setDevices] = useState([]);
+    const [connections, setConnections] = useState([]);
     const [selectedCable, setSelectedCable] = useState(null);
     const [activeSource, setActiveSource] = useState(null);
     const [dragPoint, setDragPoint] = useState(null);
@@ -11,6 +12,7 @@ const PhysicalLabSim = ({ onClose }) => {
     const [feedback, setFeedback] = useState('Pilih device dari toolbox dan letakkan dalam workspace.');
     const [draggingDevice, setDraggingDevice] = useState(null);
     const [hasDragged, setHasDragged] = useState(false);
+    const [completedInstructions, setCompletedInstructions] = useState([]);
 
     const workspaceRef = useRef(null);
     const bottomRef = useRef(null);
@@ -120,6 +122,18 @@ const PhysicalLabSim = ({ onClose }) => {
         let output = [];
         const cleanCmd = cmd.toLowerCase().trim();
 
+        // Check against task steps
+        const matchingStep = enterpriseLabData.taskSteps.find(s =>
+            s.device === dev.name &&
+            (cleanCmd === s.command.toLowerCase() ||
+                (s.command.includes('hostname ') && cleanCmd.startsWith('hostname ')))
+        );
+
+        if (matchingStep && !completedInstructions.includes(matchingStep.id)) {
+            setCompletedInstructions([...completedInstructions, matchingStep.id]);
+            output.push(`✅ Task Completed: ${matchingStep.title}`);
+        }
+
         if (cleanCmd === 'enable') newHostname = dev.type === 'pc' ? 'PC>' : (dev.type === 'router' ? 'Router#' : 'Switch#');
         else if (cleanCmd.startsWith('hostname ')) {
             const newName = cmd.split(' ')[1];
@@ -140,11 +154,11 @@ const PhysicalLabSim = ({ onClose }) => {
     }, [devices, activeDevice, view]);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 md:p-4 bg-black/95 backdrop-blur-md overflow-hidden font-sans">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 md:p-4 bg-black/95 backdrop-blur-md overflow-hidden font-sans text-white">
             <div className="w-full max-w-7xl h-[95vh] md:h-[90vh] bg-[#0a0a0a] rounded-3xl border-2 border-[#f0883e] flex flex-col overflow-hidden shadow-[0_0_100px_rgba(240,136,62,0.3)]">
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-[#f0883e] to-[#ffc800] p-3 md:p-4 flex justify-between items-center border-b border-black/20">
+                <div className="bg-gradient-to-r from-[#f0883e] to-[#ffc800] p-3 md:p-4 flex justify-between items-center border-b border-black/20 shrink-0">
                     <div className="flex items-center gap-3 text-black">
                         <span className="text-2xl animate-spin-slow">⚙️</span>
                         <div>
@@ -153,65 +167,64 @@ const PhysicalLabSim = ({ onClose }) => {
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
-                        <button onClick={() => setView('workspace')} className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${view === 'workspace' ? 'bg-black text-[#f0883e]' : 'text-black/60 hover:text-black'}`}>Workspace</button>
+                        {view === 'terminal' && (
+                            <button onClick={() => setView('workspace')} className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase bg-black text-[#f0883e] hover:bg-black/80 transition-all">← Back to Workspace</button>
+                        )}
                         <button onClick={onClose} className="w-10 h-10 rounded-full bg-black/10 hover:bg-black/30 flex items-center justify-center font-bold text-black transition-all rotate-45 hover:rotate-90">✕</button>
                     </div>
                 </div>
 
                 <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+                    {view === 'workspace' ? (
+                        <>
+                            {/* Workspace Toolbar */}
+                            <div className="w-full md:w-64 bg-[#111] border-b md:border-b-0 md:border-r border-white/5 p-4 flex flex-col justify-between z-50 overflow-y-auto">
+                                <div className="space-y-6">
+                                    <div className="space-y-3">
+                                        <h3 className="text-[10px] font-black text-[#f0883e] uppercase tracking-widest flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-[#f0883e] animate-pulse" /> Toolbox
+                                        </h3>
+                                        <div className="grid grid-cols-3 md:grid-cols-1 gap-2">
+                                            {Object.values(deviceTypes).map(t => (
+                                                <button key={t.type} onClick={() => addDevice(t.type)} className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:border-[#f0883e]/50 transition-all flex flex-col items-center gap-1 group">
+                                                    <span className="text-xl group-hover:scale-110 transition-transform">{t.icon}</span>
+                                                    <span className="text-[8px] font-bold text-white/50 group-hover:text-white uppercase">{t.type}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
 
-                    {/* Toolbar */}
-                    <div className="w-full md:w-64 bg-[#111] border-b md:border-b-0 md:border-r border-white/5 p-4 flex flex-col justify-between z-50">
-                        <div className="space-y-6">
-                            <div className="space-y-3">
-                                <h3 className="text-[10px] font-black text-[#f0883e] uppercase tracking-widest flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-[#f0883e] animate-pulse" /> Toolbox
-                                </h3>
-                                <div className="grid grid-cols-3 md:grid-cols-1 gap-2">
-                                    {Object.values(deviceTypes).map(t => (
-                                        <button key={t.type} onClick={() => addDevice(t.type)} className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:border-[#f0883e]/50 transition-all flex flex-col items-center gap-1 group">
-                                            <span className="text-xl group-hover:scale-110 transition-transform">{t.icon}</span>
-                                            <span className="text-[8px] font-bold text-white/50 group-hover:text-white uppercase">{t.type}</span>
-                                        </button>
-                                    ))}
+                                    <div className="space-y-3">
+                                        <h3 className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Connections</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-1 gap-2">
+                                            <button onClick={() => setSelectedCable('console')} className={`p-2 rounded-lg border flex items-center gap-2 transition-all ${selectedCable === 'console' ? 'border-blue-500 bg-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'border-white/5 opacity-40 hover:opacity-100'}`}>
+                                                <div className="w-2 h-2 rounded-full bg-blue-500" /> <span className="text-[9px] text-white font-bold uppercase">Console</span>
+                                            </button>
+                                            <button onClick={() => setSelectedCable('ethernet')} className={`p-2 rounded-lg border flex items-center gap-2 transition-all ${selectedCable === 'ethernet' ? 'border-yellow-500 bg-yellow-500/20 shadow-[0_0_10px_rgba(251,191,36,0.3)]' : 'border-white/5 opacity-40 hover:opacity-100'}`}>
+                                                <div className="w-2 h-2 rounded-full bg-yellow-500" /> <span className="text-[9px] text-white font-bold uppercase">Copper</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 space-y-3 pb-4">
+                                    <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                                        <p className="text-[9px] text-white/40 font-bold uppercase mb-1">Status Console</p>
+                                        <p className="text-[10px] text-[#f0883e] font-black italic leading-tight">{feedback}</p>
+                                    </div>
+                                    <button onClick={() => { setDevices([]); setConnections([]); setFeedback('Workspace cleared.'); setCompletedInstructions([]); }} className="w-full py-2 border border-red-500/30 text-red-500/60 text-[9px] font-black uppercase rounded-lg hover:bg-red-500 hover:text-white transition-all">Clear All</button>
                                 </div>
                             </div>
 
-                            <div className="space-y-3">
-                                <h3 className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Connections</h3>
-                                <div className="grid grid-cols-2 md:grid-cols-1 gap-2">
-                                    <button onClick={() => setSelectedCable('console')} className={`p-2 rounded-lg border flex items-center gap-2 transition-all ${selectedCable === 'console' ? 'border-blue-500 bg-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'border-white/5 opacity-40 hover:opacity-100'}`}>
-                                        <div className="w-2 h-2 rounded-full bg-blue-500" /> <span className="text-[9px] text-white font-bold uppercase">Console</span>
-                                    </button>
-                                    <button onClick={() => setSelectedCable('ethernet')} className={`p-2 rounded-lg border flex items-center gap-2 transition-all ${selectedCable === 'ethernet' ? 'border-yellow-500 bg-yellow-500/20 shadow-[0_0_10px_rgba(251,191,36,0.3)]' : 'border-white/5 opacity-40 hover:opacity-100'}`}>
-                                        <div className="w-2 h-2 rounded-full bg-yellow-500" /> <span className="text-[9px] text-white font-bold uppercase">Copper</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="mt-8 space-y-3">
-                            <div className="p-3 bg-white/5 rounded-xl border border-white/5">
-                                <p className="text-[9px] text-white/40 font-bold uppercase mb-1">Status Console</p>
-                                <p className="text-[10px] text-[#f0883e] font-black italic leading-tight">{feedback}</p>
-                            </div>
-                            <button onClick={() => { setDevices([]); setConnections([]); setFeedback('Workspace cleared.'); }} className="w-full py-2 border border-red-500/30 text-red-500/60 text-[9px] font-black uppercase rounded-lg hover:bg-red-500 hover:text-white transition-all">Clear All</button>
-                        </div>
-                    </div>
-
-                    {/* Workspace Canvas */}
-                    <div
-                        className="flex-1 bg-black relative overflow-hidden flex flex-col select-none cursor-crosshair"
-                        onMouseMove={handleWorkspaceMouseMove}
-                        onMouseUp={() => setDraggingDevice(null)}
-                        ref={workspaceRef}
-                    >
-                        {view === 'workspace' ? (
-                            <div className="w-full h-full relative">
-                                {/* Grid Pattern */}
+                            {/* Workspace Canvas */}
+                            <div
+                                className="flex-1 bg-black relative overflow-hidden flex flex-col select-none cursor-crosshair"
+                                onMouseMove={handleWorkspaceMouseMove}
+                                onMouseUp={() => setDraggingDevice(null)}
+                                ref={workspaceRef}
+                            >
                                 <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #333 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
 
-                                {/* Connection Lines */}
                                 <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
                                     {connections.map(c => {
                                         const fromDev = devices.find(d => d.id === c.from.devId);
@@ -241,7 +254,6 @@ const PhysicalLabSim = ({ onClose }) => {
                                     )}
                                 </svg>
 
-                                {/* Devices */}
                                 {devices.map(dev => (
                                     <div
                                         key={dev.id}
@@ -254,8 +266,6 @@ const PhysicalLabSim = ({ onClose }) => {
                                             <span className="text-2xl md:text-3xl">{deviceTypes[dev.type].icon}</span>
                                             <span className="text-[8px] md:text-[9px] font-black text-white/50 uppercase truncate w-full text-center">{dev.name}</span>
                                         </div>
-
-                                        {/* Ports Pop-up on Hover */}
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none group-hover:pointer-events-auto">
                                             <div className="bg-[#222] border border-white/10 rounded-lg p-1.5 flex gap-1.5 shadow-2xl backdrop-blur-md">
                                                 {deviceTypes[dev.type].ports.map(p => (
@@ -273,43 +283,103 @@ const PhysicalLabSim = ({ onClose }) => {
                                     </div>
                                 ))}
                             </div>
-                        ) : (
-                            /* Terminal Interface (Device Hub) */
-                            <div className="w-full h-full flex flex-col bg-[#050505] p-2 md:p-6 overflow-hidden">
-                                <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-none">
+                        </>
+                    ) : (
+                        /* TERMINAL VIEW WITH GUIDANCE */
+                        <div className="flex-1 flex overflow-hidden w-full">
+                            {/* Guidance Sidebar */}
+                            <div className="hidden lg:flex w-80 bg-[#111] border-r border-white/5 flex-col p-6 space-y-6 overflow-y-auto shrink-0">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-xs font-black text-[#f0883e] uppercase tracking-widest flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-[#f0883e]" />
+                                        Lab Guidance
+                                    </h3>
+                                    <span className="text-[10px] bg-[#f0883e]/10 text-[#f0883e] px-2.5 py-1 rounded-full font-black border border-[#f0883e]/20">
+                                        {completedInstructions.length}/{enterpriseLabData.taskSteps.length} COMPLETE
+                                    </span>
+                                </div>
+
+                                <div className="space-y-6">
+                                    {['Part 1', 'Part 2'].map(part => (
+                                        <div key={part} className="space-y-3">
+                                            <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] border-b border-white/5 pb-2">{part}</h4>
+                                            {enterpriseLabData.taskSteps.filter(s => s.part === part).map(step => (
+                                                <div key={step.id} className={`p-4 rounded-xl border transition-all duration-500 ${completedInstructions.includes(step.id) ? 'bg-green-500/5 border-green-500/30' : 'bg-white/5 border-white/5'}`}>
+                                                    <div className="flex items-start justify-between gap-3 mb-2">
+                                                        <div className="flex flex-col gap-1">
+                                                            <span className={`text-[11px] font-black leading-tight ${completedInstructions.includes(step.id) ? 'text-green-500' : 'text-white'}`}>{step.title}</span>
+                                                            <span className="text-[9px] font-mono text-white/30 uppercase">{step.device} TASK</span>
+                                                        </div>
+                                                        {completedInstructions.includes(step.id) && <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-xs text-black font-bold">✓</span>}
+                                                    </div>
+                                                    <p className="text-[10px] text-white/40 leading-relaxed italic">{step.desc}</p>
+                                                    {!completedInstructions.includes(step.id) && (
+                                                        <div className="mt-4 flex items-center justify-end border-t border-white/5 pt-3">
+                                                            <button
+                                                                onClick={() => {
+                                                                    navigator.clipboard.writeText(step.command);
+                                                                    setFeedback(`Command copied: ${step.command}`);
+                                                                }}
+                                                                className="text-[9px] text-[#f0883e] hover:text-white transition-colors uppercase font-black tracking-widest flex items-center gap-1.5"
+                                                            >
+                                                                📄 Copy Hint
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Terminal Main Interface */}
+                            <div className="flex-1 flex flex-col bg-[#050505] p-4 md:p-8 overflow-hidden">
+                                <div className="flex gap-2 mb-6 overflow-x-auto pb-3 scrollbar-none">
                                     {devices.map(d => (
                                         <button
                                             key={d.id}
                                             onClick={() => setActiveDevice(d.id)}
-                                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all shrink-0 ${activeDevice === d.id ? 'bg-[#f0883e] text-black shadow-lg shadow-[#f0883e]/20' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
+                                            className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-2.5 transition-all shrink-0 border-2 ${activeDevice === d.id ? 'bg-[#f0883e] text-black border-[#f0883e] shadow-[0_10px_30px_rgba(240,136,62,0.3)]' : 'bg-white/5 text-white/30 border-white/5 hover:border-white/20'}`}
                                         >
-                                            <span>{deviceTypes[d.type].icon}</span> {d.name}
+                                            <span className="text-xl">{deviceTypes[d.type].icon}</span> {d.name}
                                         </button>
                                     ))}
-                                    {devices.length === 0 && <p className="text-white/20 text-xs font-bold italic p-4">Tiada device dalam workspace untuk dikonfigurasi...</p>}
+                                    {devices.length === 0 && <p className="text-white/20 text-xs font-bold italic">No active devices in terminal session...</p>}
                                 </div>
 
-                                {activeDevice && devices.find(d => d.id === activeDevice) && (
-                                    <div className="flex-1 flex flex-col bg-black border border-white/10 rounded-2xl overflow-hidden shadow-Inner">
-                                        <div className="bg-[#111] px-4 py-1.5 border-b border-white/5 flex justify-between items-center">
-                                            <span className="text-[10px] text-zinc-500 font-mono italic">COM Session: {devices.find(d => d.id === activeDevice).name}</span>
-                                            <div className="flex gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_#22c55e]" />
-                                                <div className="w-1.5 h-1.5 rounded-full bg-zinc-800" />
+                                {activeDevice && (
+                                    <div className="flex-1 flex flex-col bg-[#000] border-2 border-white/5 rounded-3xl overflow-hidden shadow-2xl relative group">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
+
+                                        <div className="bg-[#111] px-6 py-3 border-b border-white/5 flex justify-between items-center z-10">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex gap-1.5">
+                                                    <div className="w-3 h-3 rounded-full bg-red-500/40 border border-red-500/20 scale-75" />
+                                                    <div className="w-3 h-3 rounded-full bg-yellow-500/40 border border-yellow-500/20 scale-75" />
+                                                    <div className="w-3 h-3 rounded-full bg-green-500/40 border border-green-500/20 scale-75" />
+                                                </div>
+                                                <span className="text-xs font-mono text-white/20 ml-2">COM PORT: 192.168.12.1:{activeDevice}</span>
+                                            </div>
+                                            <div className="flex items-center gap-4 text-[10px] font-black uppercase text-white/40 tracking-widest">
+                                                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" /> Connected</span>
+                                                <span>9600-8-N-1</span>
                                             </div>
                                         </div>
-                                        <div className="flex-1 p-6 font-mono text-[11px] md:text-sm overflow-y-auto text-[#7ee787] space-y-1 scrollbar-thin scrollbar-thumb-white/10">
-                                            {devices.find(d => d.id === activeDevice).history.map((l, i) => (
-                                                <div key={i} className={l.type === 'input' ? 'text-white font-bold' : l.type === 'system' ? 'text-blue-400 italic mb-2' : ''}>
+
+                                        <div className="flex-1 p-8 font-mono text-[11px] md:text-[13px] overflow-y-auto text-[#7ee787] space-y-2 scrollbar-thin scrollbar-thumb-white/10 z-10">
+                                            {devices.find(d => d.id === activeDevice)?.history.map((l, i) => (
+                                                <div key={i} className={`leading-relaxed ${l.type === 'input' ? 'text-white font-black' : l.type === 'system' ? 'text-blue-400 font-bold opacity-80 mb-4' : 'opacity-90'}`}>
+                                                    {l.type === 'input' && <span className="text-[#f0883e] mr-3">$</span>}
                                                     {l.text}
                                                 </div>
                                             ))}
-                                            <div className="flex items-center group">
-                                                <span className="mr-2 text-white/50 font-bold">{devices.find(d => d.id === activeDevice).hostname}</span>
+                                            <div className="flex items-center pt-2">
+                                                <span className="mr-3 text-[#f0883e] font-black">{devices.find(d => d.id === activeDevice)?.hostname}</span>
                                                 <input
                                                     autoFocus
-                                                    placeholder="tulis command di sini..."
-                                                    className="flex-1 bg-transparent border-none outline-none caret-[#f0883e] text-white placeholder:text-white/10"
+                                                    placeholder="Enter Cisco IOS command..."
+                                                    className="flex-1 bg-transparent border-none outline-none caret-[#f0883e] text-white placeholder:text-white/5"
                                                     onKeyDown={(e) => {
                                                         if (e.key === 'Enter') {
                                                             runCommand(e.target.value);
@@ -318,13 +388,13 @@ const PhysicalLabSim = ({ onClose }) => {
                                                     }}
                                                 />
                                             </div>
-                                            <div ref={bottomRef} />
+                                            <div ref={bottomRef} className="h-4" />
                                         </div>
                                     </div>
                                 )}
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
