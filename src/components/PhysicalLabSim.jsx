@@ -283,15 +283,16 @@ const PhysicalLabSim = ({ onClose }) => {
 
                         {/* Terminal (Visible on Desktop always, or Terminal Tab on mobile) */}
                         <div className={`${activeTab === 'terminal' ? 'flex' : 'hidden md:flex'} flex-1 flex flex-col overflow-hidden`}>
-                            {/* Device Tabs (Desktop) */}
-                            <div className="hidden md:flex bg-[#161b22] border-b border-[#30363d] p-3 gap-2 shrink-0">
+                            {/* Device Tabs (Scrollable on mobile) */}
+                            <div className="bg-[#161b22] border-b border-[#30363d] p-2 md:p-3 flex gap-2 shrink-0 overflow-x-auto no-scrollbar">
                                 {['R1', 'R2', 'S1', 'S2'].map(dev => (
                                     <button
                                         key={dev}
                                         onClick={() => setCurrentDevice(dev)}
-                                        className={`px-6 py-3 rounded-xl font-black text-xs uppercase transition-all ${currentDevice === dev ? 'bg-[#f0883e] text-black shadow-lg shadow-[#f0883e]/30' : 'bg-[#21262d] text-white/40 hover:text-white'} ${currentStepData?.device === dev ? 'ring-2 ring-[#f0883e]/50 ring-offset-2 ring-offset-[#161b22]' : ''}`}
+                                        className={`px-4 py-2 md:px-6 md:py-3 rounded-xl font-black text-[10px] md:text-xs uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${currentDevice === dev ? 'bg-[#f0883e] text-black shadow-lg shadow-[#f0883e]/30' : 'bg-[#21262d] text-white/40 hover:text-white'} ${currentStepData?.device === dev ? 'ring-2 ring-[#f0883e]/50 ring-offset-2 ring-offset-[#161b22]' : ''}`}
                                     >
-                                        {dev.startsWith('R') ? '🌐' : '⏹️'} {dev}
+                                        <span className="text-xs md:text-sm">{dev.startsWith('R') ? '🌐' : '⏹️'}</span>
+                                        {dev}
                                     </button>
                                 ))}
                             </div>
