@@ -10,6 +10,7 @@ const PhysicalLabSim = ({ onClose }) => {
     const [activeDevice, setActiveDevice] = useState(null);
     const [feedback, setFeedback] = useState('Pilih device dari toolbox dan letakkan dalam workspace.');
     const [draggingDevice, setDraggingDevice] = useState(null);
+    const [hasDragged, setHasDragged] = useState(false);
 
     const workspaceRef = useRef(null);
     const bottomRef = useRef(null);
@@ -97,12 +98,17 @@ const PhysicalLabSim = ({ onClose }) => {
         }
 
         if (draggingDevice) {
+            setHasDragged(true);
             setDevices(devices.map(d => d.id === draggingDevice ? { ...d, x, y } : d));
         }
     };
 
     const handleDeviceClick = (e, dev) => {
         e.stopPropagation();
+        if (hasDragged) {
+            setHasDragged(false);
+            return;
+        }
         setActiveDevice(dev.id);
         setView('terminal');
     };
