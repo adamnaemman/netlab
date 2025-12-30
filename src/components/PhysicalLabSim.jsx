@@ -20,6 +20,7 @@ const PhysicalLabSim = ({ onClose }) => {
         R1: 'Router', R2: 'Router', S1: 'Switch', S2: 'Switch'
     });
     const [expandedPart, setExpandedPart] = useState(1);
+    const [showCelebration, setShowCelebration] = useState(false);
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
 
@@ -98,7 +99,13 @@ const PhysicalLabSim = ({ onClose }) => {
                 [device]: [...prev[device], { type: 'success', text: `✅ Correct! +${step.xp} XP` }]
             }));
 
-            setCompletedSteps(prev => [...prev, currentStep]);
+            setCompletedSteps(prev => {
+                const newCompleted = [...prev, currentStep];
+                if (newCompleted.length === totalSteps) {
+                    setTimeout(() => setShowCelebration(true), 1500);
+                }
+                return newCompleted;
+            });
 
             if (currentStep < totalSteps - 1) {
                 const nextStep = enterpriseLabData.labSteps[currentStep + 1];
@@ -247,9 +254,9 @@ const PhysicalLabSim = ({ onClose }) => {
                             <div className="flex-1 font-mono text-sm overflow-y-auto space-y-1 text-[#c9d1d9]">
                                 {terminalHistory[currentDevice].map((line, i) => (
                                     <div key={i} className={`leading-relaxed ${line.type === 'input' ? 'text-white font-bold' :
-                                            line.type === 'success' ? 'text-green-400 font-bold' :
-                                                line.type === 'error' ? 'text-red-400' :
-                                                    line.type === 'system' ? 'text-blue-400 italic' : ''
+                                        line.type === 'success' ? 'text-green-400 font-bold' :
+                                            line.type === 'error' ? 'text-red-400' :
+                                                line.type === 'system' ? 'text-blue-400 italic' : ''
                                         }`}>
                                         {line.text}
                                     </div>
@@ -296,6 +303,80 @@ const PhysicalLabSim = ({ onClose }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Graduation Celebration Modal */}
+            {showCelebration && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xl animate-fade-in">
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                        {[...Array(40)].map((_, i) => (
+                            <div
+                                key={i}
+                                className="confetti-piece"
+                                style={{
+                                    left: `${Math.random() * 100}%`,
+                                    color: ['#f0883e', '#ffc800', '#7ee787', '#3b82f6'][Math.floor(Math.random() * 4)],
+                                    fontSize: `${Math.random() * 20 + 10}px`,
+                                    animationDuration: `${Math.random() * 2 + 2}s`,
+                                    animationDelay: `${Math.random() * 3}s`,
+                                }}
+                            >
+                                {['✨', '⭐', '🎊', '🎉'][Math.floor(Math.random() * 4)]}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="w-full max-w-2xl bg-[#0d1117] rounded-[2rem] border-2 border-[#f0883e] p-8 md:p-12 text-center relative overflow-hidden shadow-[0_0_100px_rgba(240,136,62,0.3)] animate-zoom-in">
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#f0883e] via-[#ffc800] to-[#f0883e]" />
+
+                        <div className="mb-8 relative inline-block">
+                            <div className="text-8xl animate-slow-bounce">🏆</div>
+                            <div className="absolute -top-4 -right-4 bg-green-500 text-black text-xs font-black px-3 py-1 rounded-full shadow-lg">PASSED</div>
+                        </div>
+
+                        <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter mb-4">
+                            Lab Complete!
+                        </h2>
+
+                        <p className="text-[#7ee787] font-mono text-lg mb-8">
+                            Certification of Technical Proficiency
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-4 mb-10">
+                            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Total XP Earned</p>
+                                <p className="text-3xl font-black text-[#f0883e]">{xpEarned}</p>
+                            </div>
+                            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Steps Mastered</p>
+                                <p className="text-3xl font-black text-white">{totalSteps}</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <button
+                                onClick={onClose}
+                                className="w-full py-5 bg-gradient-to-r from-[#f0883e] to-[#ffc800] rounded-2xl text-black font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-[#f0883e]/20"
+                            >
+                                Finish & Return Home
+                            </button>
+                            <button
+                                onClick={() => setShowCelebration(false)}
+                                className="w-full py-4 bg-white/5 hover:bg-white/10 rounded-2xl text-white/60 font-bold text-xs uppercase transition-all"
+                            >
+                                Back to Topology View
+                            </button>
+                        </div>
+
+                        <div className="mt-12 pt-8 border-t border-white/5 flex justify-between items-center opacity-40 grayscale">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xl">⚙️</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest">NetLab Certified</span>
+                            </div>
+                            <span className="text-[8px] font-mono">{new Date().toLocaleDateString()} // SESSION_COMPLETED</span>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
